@@ -222,7 +222,10 @@ The file `variant-summary.txt` can be downloaded from the NCBI FTP website at `h
 :
 
 "VariationID"
-:
+: ClinVar assigns a unique integer identifier to each set of variants described in submitted records. The majority of submitted records in ClinVar interpret a single variant, and a Variation ID is assigned even if there is only one variant in the set. There are two subclasses of Variation IDs:
+:   - those being interpreted directly (interpreted)
+:   - those being interpreted only in the context of a set of variants (included)
+: Used to link for VRS identifiers
 
 "PositionVCF"
 :

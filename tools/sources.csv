@@ -1,0 +1,5 @@
+name,directory,file,dictionary,header_row,skip_rows,delimiter
+gencc-submissions,../gencc,gencc-submissions.tsv,gencc-submissions.dict,0,0,tab
+clinvar-summary,../clinvar,variant_summary.txt,variant_summary.dict,0,0,tab
+clinvar-vrs,../clinvar,bq-results-20231108-212724-1699478877430.csv,vrs.dict,0,0,comma
+clingen-dosage,../clingen,gene-dosage-sensitivity.tsv,gene-dosage-sensitivity.dict,3,1,comma

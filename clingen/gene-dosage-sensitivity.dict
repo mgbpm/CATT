@@ -1,0 +1,7 @@
+column,comment,onehot,category,continuous,text
+GENE SYMBOL,text,false,false,false,true
+HGNC ID,text,false,false,false,true
+HAPLOINSUFFICIENCY,text,false,false,false,true
+TRIPLOSENSITIVITY,text,false,false,false,true
+ONLINE REPORT,text,false,false,false,true
+DATE,text,false,false,false,true
