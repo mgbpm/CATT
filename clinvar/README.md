@@ -1,5 +1,7 @@
 The file `variant-summary.txt` can be downloaded from the NCBI FTP website at `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz`. The file contains the following columns:
 
+The ClinVar data dictionary is available at https://www.ncbi.nlm.nih.gov/projects/clinvar/ClinVarDataDictionary.pdf.
+
 #AlleleID	Type	Name	GeneID	GeneSymbol	HGNC_ID	ClinicalSignificance	ClinSigSimple	LastEvaluated	RS# (dbSNP)	nsv/esv (dbVar)	RCVaccession	PhenotypeIDS	PhenotypeList	Origin	OriginSimple	Assembly	ChromosomeAccession	Chromosome	Start	Stop	ReferenceAllele	AlternateAllele	Cytogenetic	ReviewStatus	NumberSubmitters	Guidelines	TestedInGTR	OtherIDs	SubmitterCategories	VariationID	PositionVCF	ReferenceAlleleVCF	AlternateAlleleVCF
 #15041	Indel	NM_014855.3(AP5Z1):c.80_83delinsTGCTGTAAACTGTAACTGTAAA (p.Arg27_Ile28delinsLeuLeuTer)	9907	AP5Z1	HGNC:22197	Pathogenic	1	-	397704705	-	RCV000000012	MONDO:MONDO:0013342,MedGen:C3150901,OMIM:613647,Orphanet:306511	Hereditary spastic paraplegia 48	germline;unknown	germline	GRCh37	NC_000007.13	7	4820844	4820847	na	na	7p22.1	criteria provided, single submitter	2	-	N	ClinGen:CA215070,OMIM:613653.0001	3	2	4820844	GGAT	TGCTGTAAACTGTAACTGTAAA
 
@@ -102,7 +104,7 @@ The file `variant-summary.txt` can be downloaded from the NCBI FTP website at `h
 : The date the variant was last evaluated by the submitter.
 
 "RS# (dbSNP)"
-:
+: rs# in dbSNP, reported as -1 if missing
 
 "nsv/esv (dbVar)"
 :
