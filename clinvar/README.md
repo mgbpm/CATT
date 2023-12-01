@@ -1,7 +1,8 @@
-The file `variant-summary.txt` can be downloaded from the NCBI FTP website at `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz`. The file contains the following columns:
+### The file `variant-summary.txt` can be downloaded from the NCBI FTP website at `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz`. The file contains the following columns:
 
-The ClinVar data dictionary is available at https://www.ncbi.nlm.nih.gov/projects/clinvar/ClinVarDataDictionary.pdf.
+### The ClinVar data dictionary is available at https://www.ncbi.nlm.nih.gov/projects/clinvar/ClinVarDataDictionary.pdf.
 
+### Columns include
 #AlleleID	Type	Name	GeneID	GeneSymbol	HGNC_ID	ClinicalSignificance	ClinSigSimple	LastEvaluated	RS# (dbSNP)	nsv/esv (dbVar)	RCVaccession	PhenotypeIDS	PhenotypeList	Origin	OriginSimple	Assembly	ChromosomeAccession	Chromosome	Start	Stop	ReferenceAllele	AlternateAllele	Cytogenetic	ReviewStatus	NumberSubmitters	Guidelines	TestedInGTR	OtherIDs	SubmitterCategories	VariationID	PositionVCF	ReferenceAlleleVCF	AlternateAlleleVCF
 #15041	Indel	NM_014855.3(AP5Z1):c.80_83delinsTGCTGTAAACTGTAACTGTAAA (p.Arg27_Ile28delinsLeuLeuTer)	9907	AP5Z1	HGNC:22197	Pathogenic	1	-	397704705	-	RCV000000012	MONDO:MONDO:0013342,MedGen:C3150901,OMIM:613647,Orphanet:306511	Hereditary spastic paraplegia 48	germline;unknown	germline	GRCh37	NC_000007.13	7	4820844	4820847	na	na	7p22.1	criteria provided, single submitter	2	-	N	ClinGen:CA215070,OMIM:613653.0001	3	2	4820844	GGAT	TGCTGTAAACTGTAACTGTAAA
 
@@ -286,3 +287,46 @@ GENCC:000114	King Faisal Specialist Hospital and Research Center
 GENCC:000110	Orphanet
 GENCC:000102	ClinGen
 ```
+
+
+
+### The `submission_summary.txt` file is downloaded from the same directory as the variant summary.
+
+"VariationID"
+: the identifier assigned by ClinVar and used to build the URL, namely https://ncbi.nlm.nih.gov/clinvar/VariationID
+
+"ClinicalSignificance"
+: interpretation of the variation-condition relationship
+
+"DateLastEvaluated"
+: the last date the variation-condition relationship was evaluated by this submitter
+
+"Description"
+: an optional free text description of the basis of the interpretation
+
+"SubmittedPhenotypeInfo"
+: the name(s) or identifier(s)  submitted for the condition that was interpreted relative to the variant
+
+"ReportedPhenotypeInfo"
+: the MedGen identifier/name combinations ClinVar uses to report the condition that was interpreted. 'na' means there is no public identifer in MedGen for the condition.
+
+"ReviewStatus"
+: the level of review for this submission, namely http//www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/#review_status
+
+"CollectionMethod"
+: the method by which the submitter obtained the information provided
+
+"OriginCounts"
+: the reported origin and the number of observations for each origin
+
+"Submitter"
+: the submitter of this record
+
+"SCV"
+: the accession and current version assigned by ClinVar to the submitted interpretation of the variation-condition relationship
+
+"SubmittedGeneSymbol"
+: the symbol provided by the submitter for the gene affected by the variant. May be null.
+
+"ExplanationOfInterpretation"
+: the submitter's preferred term for the interpretation when ClinicalSignificance is submitted as 'other' or 'drug response'. May be null.

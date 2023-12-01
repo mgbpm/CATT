@@ -13,7 +13,6 @@ parser = argparse.ArgumentParser(
                     allow_abbrev=True,
                     exit_on_error=True)
 
-
 parser.add_argument('--onehot', action='store_true', help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true', help="Generate category encodings for columns that support it.")
 parser.add_argument('--continuous', action='store_true', help="Generate continuous variables for columns that support it.")
@@ -45,7 +44,7 @@ else:
     sources = list(set(sourcefiles['name']) & set(args.sources))
 
 # any invalid sources?
-invsources = set(args.sources).difference(sourcefiles['name'])
+invsources = set(sources).difference(sourcefiles['name'])
 if len(invsources) > 0:
     print("Invalid source file specficied in --sources parameter: ", invsources)
     exit(-1)
@@ -74,27 +73,40 @@ for index, sourcefile in sourcefiles.iterrows():
         separator = None
 
     # read source dictionary
+    print("Reading dictionary")
     dic = pd.read_csv(sourcefile['directory'] + '/' + sourcefile['dictionary'])
+    print(dic)
     for i, r in dic.iterrows():
         # add dictionary entry to global diction if specified on command line, or if no columns specified on command line
         if args.columns == None or r['column'] in args.columns:
             dictionary.loc[len(dictionary)] = [sourcefile['directory'], sourcefile['file'], r['column'], r['comment'], r['onehot'], r['category'], r['continuous'], r['text']]
+    print("Dictionary processed")
 
     # read source data
     # if verbose
     print("Reading",sourcefile['name'],"...")
+
+
+
+    #bad_lines_fp = open('bad_lines.csv', 'a')
     if args.columns == None:
         data.update({sourcefile['name']: pd.read_csv(sourcefile['directory'] + '/' + sourcefile['file'],
                                                      header=sourcefile['header_row'], sep=separator,
-                                                     skiprows=sourcefile['skip_rows'], engine='python')})
+                                                     skiprows=sourcefile['skip_rows'], engine='python',
+                                                     quoting=sourcefile['quoting'],
+                                                     on_bad_lines='warn')})
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
         data.update({sourcefile['name']: pd.read_csv(sourcefile['directory'] + '/' + sourcefile['file'],
                                                      usecols=sourcecolumns,
                                                      header=sourcefile['header_row'], sep=separator,
-                                                     skiprows=sourcefile['skip_rows'], engine='python')})
+                                                     skiprows=sourcefile['skip_rows'], engine='python',
+                                                     quoting=sourcefile['quoting'],
+                                                     on_bad_lines='warn')})
     # if verbose
-    print(sourcefile['name'],":",data[sourcefile['name']].head())
+    print("Finshed reading source file")
+    print(sourcefile['name'],":",data[sourcefile['name']].head(), data[sourcefile['name']].info())
+    #bad_lines_fp.close()
 
 
 # show the dictionary
@@ -118,7 +130,9 @@ for d in data.keys():
 print()
 print()
 print()
+exit(0)
 # determine best configuration for pre-defining possible merges
+
 print("Merging...")
 merge1 = pd.merge(data['clinvar-summary'], data['clinvar-vrs'], left_on='VariationID', right_on='clinvar_variation_id')
 merge2 = pd.merge(merge1, data['gencc-submissions'], left_on='GeneSymbol', right_on='gene_symbol')
