@@ -1,3 +1,0 @@
-column,comment,onehot,category,continuous,text
-clinvar_variation_id,text,false,false,false,true
-vrs_2_0_alpha_id,text,false,false,false,true

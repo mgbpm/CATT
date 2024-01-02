@@ -13,7 +13,7 @@ geneFilter = args.gene
 
 print("Generate file:",outputFile)
 
-print("Transforming gencc-submissions.tsv for AI/ML")
+print("Transforming gencc-submissions-submissions.tsv for AI/ML")
 
 df = pd.read_csv('gencc-submissions.tsv', sep='\t', header=0)
 
