@@ -11,6 +11,10 @@ from sklearn.preprocessing import LabelEncoder
 one_hot_prefix = 'one'
 categories_prefix = 'cat'
 ordinal_prefix = 'ord'
+rank_prefix = 'rnk'
+
+pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_columns', 1000)
 
 #########################
 #
@@ -32,7 +36,7 @@ parser.add_argument('--scaling', action='store_true', help="Min/max scaling for 
 parser.add_argument('--onehot', action='store_true', help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true', help="Generate category encodings for columns that support it.")
 parser.add_argument('--continuous', action='store_true', help="Generate continuous variables for columns that support it.")
-parser.add_argument('--mapping', action='store_true', help="Generate new columns based on mapping grouping configuration.")
+parser.add_argument('--group', action='store_true', help="Generate new columns based on mapping group configuration.")
 parser.add_argument('--rank', action='store_true', help="Generate new columns based on mapping rank configuration.")
 
 # configuration management
@@ -147,6 +151,7 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      header=sourcefile['header_row'], sep=separator,
                                                      skiprows=sourcefile['skip_rows'], engine='python',
                                                      quoting=sourcefile['quoting'],
+#                                                     nrows=100,
                                                      on_bad_lines='warn')})
         sourcecolumns = list(set(dic['column']))
     else:
@@ -156,6 +161,7 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      header=sourcefile['header_row'], sep=separator,
                                                      skiprows=sourcefile['skip_rows'], engine='python',
                                                      quoting=sourcefile['quoting'],
+#                                                     nrows=100,
                                                      on_bad_lines='warn')})
     # show count of unique values per column
     if args.verbose:
@@ -166,9 +172,10 @@ for index, sourcefile in sourcefiles.iterrows():
         print()
         print()
 
-    # read mapping file, if any
+    # read mapping file, if any, and filter by selected columns, if any
     mapping_file = sourcefile['directory'] + '/' + 'mapping.csv'
     map_config_df = pd.read_csv(mapping_file)
+    map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
     if args.verbose:
         print("Mapping Config:",map_config_df)
@@ -183,7 +190,6 @@ for index, sourcefile in sourcefiles.iterrows():
                 columns=['column','value','frequency','group','rank']
             )
         df = data[sourcefile['name']]
-        pd.set_option('display.max_rows', 1000)
         for i, r in dic.iterrows():
             if r['group'] == True or r['rank'] == True:
                 print()
@@ -206,12 +212,24 @@ for index, sourcefile in sourcefiles.iterrows():
 
 
     # create augmented columns for onehot, mapping, continuous, scaling, categories
-    if args.onehot or args.categories or args.continuous or args.scaling or args.mapping:
+    if args.onehot or args.categories or args.continuous or args.scaling or args.group or args.rank:
 
         df = data[sourcefile['name']]
 
         # loop through each column and process any configured options
-        for i, r in dic.iterrows():
+        for i, r in dictionary.iterrows():
+
+            column_name = r['column']
+
+            # get mapping subset for this column, if any (dictionary column name == mapping column name)
+            map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
+            # rename columns for effective merging and output
+            map_col_df = map_col_df.drop('column', axis=1)
+            map_col_df.rename(columns={'value': column_name, 'group': column_name + '_grp', 'rank': column_name + '_rank'}, inplace=True)
+
+            if args.verbose:
+                print("Map config for column:",column_name)
+                print(map_col_df)
 
             # onehot encoding
             if args.onehot and r['onehot'] == True:
@@ -221,14 +239,24 @@ for index, sourcefile in sourcefiles.iterrows():
             # categories/label encoding
             if args.categories and r['category'] == True:
                 encoder = LabelEncoder()
-                encoded_column_name = categories_prefix + '_' + r['column']
-                df[encoded_column_name] = encoder.fit_transform(df[r['column']])
+                encoded_column_name = categories_prefix + '_' + column_name
+                df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
             # ordinal encoding
-            if args.rank and r['rank'] == True:
+            if (args.rank and r['rank'] == True and len(map_col_df.index) > 0) or (args.group and r['group'] == True and len(map_col_df.index) > 0):
+                encoded_column_name = rank_prefix + '_' + column_name
+                # df[encoded_column_name] = df.apply(lambda row: map_col_df.loc[map_col_df['value'] == row[column_name], 'rank'], axis=1)
+                df = pd.merge(
+                    left=df,
+                    right=map_col_df,
+                    left_on=column_name,
+                    right_on=column_name,
+                    how='left',
+                    suffixes=('','_'+column_name)
+                )
                 print("Not yet implemented")
                 # TODO: should we use ranking as just the order, or use it as a numeric mapping?
-                # TODO: do we then normalize or scale the values afterwards, is that a separate options?
+                # TODO: do we then normalize or scale the values afterwards, is that a separate option?
                 # mapping for column must be in mapping.csv file and include a rank value
                 # get ranking values and ranks from mapping.csv
                 # sources = {'Education': ['High School', 'Bachelor', 'Master', 'PhD', 'Bachelor']}
@@ -238,11 +266,11 @@ for index, sourcefile in sourcefiles.iterrows():
                 # print(df)
 
             # mapping
-            if args.rank and r['rank'] == True:
-                print("Not yet implemented")
-                encoded_column_name = 'xxxx' # use "group-name" from config?
-                # TODO:
-                #
+            #if args.rank and r['rank'] == True:
+            #    print("Not yet implemented")
+            #    encoded_column_name = 'xxxx' # use "group-name" from config?
+            #    # TODO:
+            #    #
 
             # continuous
             #  z-score?  https://www.analyticsvidhya.com/blog/2015/11/8-ways-deal-continuous-variables-predictive-modeling/
@@ -257,6 +285,8 @@ for index, sourcefile in sourcefiles.iterrows():
             # TODO: add a field level "missing" configuration to specify a strategy for handling missing sources
             # N/A, null, Empty, ?, none, empty, -, NaN, etc.
             # Strategies: variable deletion, mean/median imputation, most common value, ???
+    if args.verbose:
+        print("Data:", df)
 
 # show the dictionary
 if args.verbose:

@@ -1,10 +1,10 @@
 column,value,frequency,group,rank
 Type,single nucleotide variant,4130556,,
-Type,Deletion,213380,,
-Type,Duplication,98523,,
+Type,Deletion,213380,1,
+Type,Duplication,98523,2,
 Type,Microsatellite,55004,,
-Type,copy number loss,37442,,
-Type,copy number gain,36807,,
+Type,copy number loss,37442,1,
+Type,copy number gain,36807,2,
 Type,Indel,23678,,
 Type,Insertion,19424,,
 Type,Inversion,2219,,
@@ -106,14 +106,14 @@ ClinicalSignificance,Conflicting interpretations of pathogenicity; association; 
 ClinicalSignificance,Pathogenic/Likely risk allele; risk factor,2,,
 ClinicalSignificance,other; risk factor,2,,
 ClinicalSignificance,"Pathogenic/Likely pathogenic/Pathogenic, low penetrance; other",2,,
-ReviewStatus,"criteria provided, single submitter",3537074,,
-ReviewStatus,"criteria provided, multiple submitters, no conflicts",655710,,
-ReviewStatus,"criteria provided, conflicting interpretations",205440,,
-ReviewStatus,no assertion criteria provided,166213,,
-ReviewStatus,reviewed by expert panel,30342,,
-ReviewStatus,no assertion provided,22037,,
-ReviewStatus,no interpretation for the single variant,1462,,
-ReviewStatus,practice guideline,116,,
+ReviewStatus,"criteria provided, single submitter",3537074,,1
+ReviewStatus,"criteria provided, multiple submitters, no conflicts",655710,,2
+ReviewStatus,"criteria provided, conflicting interpretations",205440,,-1
+ReviewStatus,no assertion criteria provided,166213,,0
+ReviewStatus,reviewed by expert panel,30342,,3
+ReviewStatus,no assertion provided,22037,,0
+ReviewStatus,no interpretation for the single variant,1462,,0
+ReviewStatus,practice guideline,116,,4
 SubmitterCategories,2,4536774,,
 SubmitterCategories,3,42999,,
 SubmitterCategories,1,37159,,
