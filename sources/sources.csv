@@ -1,7 +1,8 @@
-name,file,header_row,skip_rows,delimiter,quoting
-gencc-submissions,gencc-submissions.tsv,0,0,tab,0
-clinvar-variant-summary,variant_summary.txt,0,0,tab,0
-clinvar-submission-summary,submission_summary.txt,15,0,tab,3
-vrs,bq-results-20231108-212724-1699478877430.csv,0,0,comma,0
-clingen-dosage,gene-dosage-sensitivity.tsv,3,1,comma,0
-clingen-gene-disease,gene-disease-summary.tsv,3,1,comma,0
+name,file,header_row,skip_rows,delimiter,quoting,strip_hash
+gencc-submissions,gencc-submissions.tsv,0,0,tab,0,0
+clinvar-variant-summary,variant_summary.txt,0,0,tab,0,0
+clinvar-submission-summary,submission_summary.txt,15,0,tab,3,0
+vrs,bq-results-20231108-212724-1699478877430.csv,0,0,comma,0,0
+clingen-dosage,gene-dosage-sensitivity.tsv,3,1,comma,0,0
+clingen-gene-disease,gene-disease-summary.tsv,3,1,comma,0,0
+clingen-actionability-all-assertions-adult,clingen-actionability-all-assertions-adult.tsv,0,0,tab,0,1

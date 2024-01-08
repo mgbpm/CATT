@@ -7,6 +7,10 @@ from sklearn.preprocessing import LabelEncoder
 #  * determine best way to configure "joins" of source files
 #  * should I eliminate leading # on column names from ClinVar file? Maybe a "strip-comment" option?
 
+# TODO HIGH PRIORITY
+#  ** add clingen-actionability-all-assertions-adult file
+#  ** add a configuration for allowing n/a value choice, but also have a default
+
 # constants
 one_hot_prefix = 'one'
 categories_prefix = 'cat'
@@ -48,6 +52,8 @@ parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to 
     type=lambda s: [item for item in s.split(',')]) # validate below against configured sources
 parser.add_argument('-c', '--columns', help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
     type=lambda s: [item for item in s.split(',')]) # validate below against configured dictionaries
+parser.add_argument( '-o', '--output',  action='store', type=str, default='output.csv', help = 'The desired output file name.' )
+
 
 args = parser.parse_args()
 
@@ -163,6 +169,22 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      quoting=sourcefile['quoting'],
 #                                                     nrows=100,
                                                      on_bad_lines='warn')})
+    if sourcefile['strip_hash'] == 1:
+        print("Strip hashes and spaces from column labels")
+        df = data[sourcefile['name']]
+        #rename columns
+        for column in df:
+            newcol = column.strip(' #')
+            if newcol != column:
+                print("Stripping",column,"to",newcol)
+                data[sourcefile['name']] = df.rename({column: newcol}, axis='columns')
+            else:
+                print("Not stripping colum", column)
+        print(data[sourcefile['name']])
+    else:
+        print("Not stripping column labels")
+
+
     # show count of unique values per column
     if args.verbose:
         print(sourcefile['name'],":",
@@ -174,11 +196,13 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # read mapping file, if any, and filter by selected columns, if any
     mapping_file = sourcefile['directory'] + '/' + 'mapping.csv'
-    map_config_df = pd.read_csv(mapping_file)
-    map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
+    map_config_df = pd.DataFrame()
+    if not args.generate_config:
+        map_config_df = pd.read_csv(mapping_file)
+        map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
-    if args.verbose:
-        print("Mapping Config:",map_config_df)
+        if args.verbose:
+            print("Mapping Config:",map_config_df)
 
     # for rank and group columns, show the counts of each value
     if args.counts:
