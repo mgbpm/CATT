@@ -5,8 +5,8 @@ VariationID,"the identifier assigned by ClinVar and used to build the URL, namel
 "Description","an optional free text description of the basis of the interpretation",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "SubmittedPhenotypeInfo","the name(s) or identifier(s)  submitted for the condition that was interpreted relative to the variant",,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "ReportedPhenotypeInfo","the MedGen identifier/name combinations ClinVar uses to report the condition that was interpreted. 'na' means there is no public identifier in MedGen for the condition.",,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
-"ReviewStatus","the level of review for this submission, namely http//www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/#review_status",,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE
-"CollectionMethod","the method by which the submitter obtained the information provided",,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,FALSE,FALSE
+ReviewStatus,"the level of review for this submission, namely http//www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/#review_status",,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE
+"CollectionMethod",the method by which the submitter obtained the information provided,,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE
 "OriginCounts","the reported origin and the number of observations for each origin",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "Submitter","the submitter of this record",,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "SCV","the accession and current version assigned by ClinVar to the submitted interpretation of the variation-condition relationship",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
