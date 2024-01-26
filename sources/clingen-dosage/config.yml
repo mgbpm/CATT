@@ -1,0 +1,11 @@
+--- # ClinGen Gene Dosage Sensitivity
+- name: clingen-dosage
+  url: https://search.clinicalgenome.org/kb/gene-dosage/download
+  file: gene-dosage-sensitivity.tsv
+  header_row: 3
+  skip_rows: 1
+  delimiter: comma
+  quoting: 0
+  strip_hash: 0
+  md5_url:
+  md5_file:

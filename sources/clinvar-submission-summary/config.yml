@@ -1,0 +1,14 @@
+--- # ClinVar Submission Summary
+- name: clinvar-submission-summary
+  url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz
+  download_file: submission_summary.txt.gz
+  gzip: 1
+  file: submission_summary.txt
+  # TODO: need "gunzip" option and need to differentiate between download file and data file
+  header_row: 15
+  skip_rows: 0
+  delimiter: tab
+  quoting: 3
+  strip_hash: 1
+  md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz.md5
+  md5_file: submission_summary.txt.gz.md5

@@ -1,6 +1,6 @@
 "column","comment",join-group,onehot,category,continuous,text,group,rank,days,age
-"#AlleleID","A unique integer identifier, the Allele ID, is assigned to each individual variant in ClinVar.",,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE
-"Type","The type of mutation (Indel, Deletion, SNV, etc.)",,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE
+AlleleID,"A unique integer identifier, the Allele ID, is assigned to each individual variant in ClinVar.",,FALSE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE
+"Type","The type of mutation (Indel, Deletion, SNV, etc.)",,TRUE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "Name","Name of variant using standard nomenclatures (transcript, gene, cDNA change, protein change)",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "GeneID","The Entrez ID for the gene.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "GeneSymbol","The official HGNC gene symbol of the gene associated with the variant (need to verify)",gene-symbol,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE

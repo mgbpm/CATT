@@ -1,24 +1,39 @@
 import pandas as pd
 import argparse
 from sklearn.preprocessing import LabelEncoder
+import os
+import yaml
+from os import access, R_OK
+from os.path import isfile
+import requests
+
 
 # TODO:
-#  * investigate python template libraries for LLM text generation
-#  * determine best way to configure "joins" of source files
-#  * should I eliminate leading # on column names from ClinVar file? Maybe a "strip-comment" option?
+#  ** investigate python template libraries for LLM text generation
+#  ** add option to create txt output file based on a single AlleleID or
+#       VariationID across files in a structured format appropriate for LLM
 
-# TODO HIGH PRIORITY
-#  ** add clingen-actionability-all-assertions-adult file
+# TODO:
 #  ** add a configuration for allowing n/a value choice, but also have a default
 
+# TODO:
+#  ** allow gzip option for downloads
+# import gzip
+# import shutil
+# with gzip.open('file.txt.gz', 'rb') as f_in:
+#     with open('file.txt', 'wb') as f_out:
+#         shutil.copyfileobj(f_in, f_out)
+
+
 # constants
-one_hot_prefix = 'one'
+one_hot_prefix = 'hot'
 categories_prefix = 'cat'
 ordinal_prefix = 'ord'
 rank_prefix = 'rnk'
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
+
 
 #########################
 #
@@ -33,7 +48,8 @@ parser = argparse.ArgumentParser(
                     allow_abbrev=True,
                     exit_on_error=True)
 # debug/info
-parser.add_argument('--verbose', action='store_true', help="Provide additional debugging and other information.")
+parser.add_argument('-d', '--debug', action='store_true', default=False, help="Provide additional debugging and other information.")
+parser.add_argument('-i', '--info', action='store_true',  default=False, help="Provide progress and other information.")
 
 # encoding options
 parser.add_argument('--scaling', action='store_true', help="Min/max scaling for variables to 0 to 1 range.")
@@ -44,15 +60,19 @@ parser.add_argument('--group', action='store_true', help="Generate new columns b
 parser.add_argument('--rank', action='store_true', help="Generate new columns based on mapping rank configuration.")
 
 # configuration management
+parser.add_argument('--download', action='store_true', help="Download datafiles that are not present. No processing or output with this option.")
+parser.add_argument('--force', action='store_true', help="Download datafiles even if present and overwrite (with --download).")
 parser.add_argument('--counts', action='store_true', help="Generate unique value counts for columns configured for mapping and ranking.")
 parser.add_argument('--generate-config', action='store_true', dest='generate_config', help="Generate mapping and ranking templates (requires --counts).")
 
 # output control
-parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to include based on 'name' in 'sources.csv'.",
+parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
     type=lambda s: [item for item in s.split(',')]) # validate below against configured sources
 parser.add_argument('-c', '--columns', help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
     type=lambda s: [item for item in s.split(',')]) # validate below against configured dictionaries
 parser.add_argument( '-o', '--output',  action='store', type=str, default='output.csv', help = 'The desired output file name.' )
+parser.add_argument( '-v', '--variant',  action='store', type=str, help = 'Filter to a specific variant/allele.' )
+parser.add_argument( '-g', '--gene',  action='store', type=str, help = 'Filter to a specific gene (symbol).' )
 
 
 args = parser.parse_args()
@@ -68,19 +88,65 @@ args = parser.parse_args()
         # --info
         # --check; validate input options, validate files exist, validate dictionaries complete
 
+
 #########################
 #
-# CONFIGURATION
+# LOAD SOURCE CONFIGURATION
 #
 #########################
 
-# read configuration dictionary
-sourcefiles = pd.read_csv('../sources/sources.csv', sep=',', header=0, quotechar='"', engine='python')
+# find and create a list of all the config.yml files
+startpath = '../sources'
+configList = []
+for root, dirs, files in os.walk(startpath):
+    for f in files:
+        if f == 'config.yml':
+            file = '{}/{}/{}'.format(startpath, os.path.basename(root), f)
+            configList += [file]
+            if args.debug:
+                print(file)
+
+if args.debug:
+    print("config file list:")
+    print(configList)
+
+# load all the config files into a source list dataframe
+sourcefiles = pd.DataFrame(columns=['name','path','url','download_file','file','gzip','header_row',
+                                    'skip_rows','delimiter','quoting','strip_hash','md5_url','md5_file'])
+for c in configList:
+    path = c.replace('/config.yml', '') # path is everything but trailing /config.yml
+    with open(c, "r") as stream:
+        try:
+            config = yaml.safe_load(stream)[0]
+            if args.debug:
+                print("config:", c)
+                print(config)
+                print()
+            # add to config dataframe
+            sourcefiles.loc[len(sourcefiles)] = [
+                config.get('name'), path, config.get('url'), config.get('download_file'),
+                config.get('file'), config.get('gzip'), config.get('header_row'),
+                config.get('skip_rows'), config.get('delimiter'), config.get('quoting'),
+                config.get('strip_hash'), config.get('md5_url'), config.get('md5_file')
+            ]
+
+        except yaml.YAMLError as exc:
+            print(exc)
+            exit(-1)
 
 # annotate source list with helper columns
-sourcefiles['directory'] = sourcefiles.apply(lambda x: '../sources/' + x['name'], axis=1)
 sourcefiles['dictionary'] = sourcefiles.apply(lambda x: 'dictionary.csv', axis=1)
 sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
+
+if args.debug:
+    print(sourcefiles)
+
+
+#########################
+#
+# SOURCE LIST FILTRATION
+#
+#########################
 
 # validate sourcefile selections in arguments if any
 if args.sources == None:
@@ -94,18 +160,88 @@ if len(invsources) > 0:
     print("Invalid source file specficied in --sources parameter: ", invsources)
     exit(-1)
 
-if args.verbose:
+if args.debug:
     print("Using source files: ", sources)
 
 # restrict source list configuration by names
 if args.sources:
     sourcefiles = sourcefiles.loc[sourcefiles['name'].isin(sources)]
 
-if args.verbose:
+if args.debug:
     print("Source configurations: ", sourcefiles)
 
+
+#########################
+#
+# DOWNLOAD DATA FILES
+#
+#########################
+
+if args.download:
+    for i, s in sourcefiles.iterrows():
+        source_path = s.get('path')
+        download_file = ''
+        download_file_path = ''
+        if s.get('download_file'):
+            download_file = s.get('download_file')
+            download_file_path = source_path + '/' + download_file
+            if args.debug:
+                print("download_file specified for ", s.get('name'), "as", download_file)
+        md5_file = ''
+        md5_file_path = ''
+        if s.get('md5_file'):
+            md5_file = s.get('md5_file')
+            md5_file_path = source_path + '/' + md5_file
+        datafile = ''
+        datafile_path = ''
+        if s.get('file'):
+            datafile = s.get('file')
+            datafile_path = source_path + '/' + datafile
+            if args.debug:
+                print("datafile specified for ", s.get('name'), "as", datafile_path)
+        # see if the file is present
+        need_download = False
+        if len(datafile_path) > 0:
+            if args.force:
+                need_download = True
+            else:
+                if isfile(datafile_path) and access(datafile_path, R_OK):
+                    if args.debug:
+                        print("Found existing readable file", datafile_path)
+                else:
+                    need_download = True
+        else:
+            print("No datafile specified for",s.get('name'),"!")
+            exit(-1)
+        if need_download:
+            # need md5 file?
+            # download md5
+            if len(download_file) > 0:
+                print("Downoading", s.get('url'), "as", download_file_path)
+                #filename = wget.download(s.get('url'), out=source_path)
+                r = requests.get(s.get('url'))
+                open(download_file_path, 'wb').write(r.content)
+                print("Completed download of", download_file_path)
+            else:
+                print("Downoading", s.get('url'), "as", datafile_path)
+                #filename = wget.download(s.get('url'), out=source_path)
+                r = requests.get(s.get('url'))
+                open(datafile_path, 'wb').write(r.content)
+                print("Completed download of", datafile_path)
+            print("Complete")
+        else:
+            print("Data file", datafile, "already present.")
+    exit(0) # exit
+
+
+#########################
+#
+# FIELD CONFIG DICTIONARY
+#
+#########################
+
 # setup sources dictionary
-dictionary = pd.DataFrame(columns=['directory', 'file', 'column', 'comment', 'onehot', 'category', 'continuous',
+dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'onehot', 'category', 'continuous',
                                    'text', 'group', 'rank', 'days', 'age'])
 data = dict()
 global sourcecolumns, map_config_df
@@ -113,8 +249,8 @@ global sourcecolumns, map_config_df
 #  process each source file and dictionary
 for index, sourcefile in sourcefiles.iterrows():
 
-    if args.verbose:
-        print(sourcefile['directory'], sourcefile['file'], sourcefile['dictionary'], "sep='" + sourcefile['delimiter'] + "'")
+    if args.debug:
+        print(sourcefile['path'], sourcefile['file'], sourcefile['dictionary'], "sep='" + sourcefile['delimiter'] + "'")
 
     delimiter = sourcefile['delimiter']
     if delimiter == 'tab':
@@ -125,33 +261,33 @@ for index, sourcefile in sourcefiles.iterrows():
         separator = None
 
     # read source dictionary
-    if args.verbose:
+    if args.debug:
         print("Reading dictionary")
 
-    if args.verbose:
+    if args.debug:
         print("sourcefile =", sourcefile)
-    dictionary_file = sourcefile['directory'] + '/' + sourcefile['dictionary']
+    dictionary_file = sourcefile['path'] + '/' + sourcefile['dictionary']
 
-    if args.verbose:
+    if args.info:
         print("Read dictionary", dictionary_file)
     dic = pd.read_csv(dictionary_file)
 
-    if args.verbose:
+    if args.debug:
         print(dic)
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
         if args.columns == None or r['column'] in args.columns:
-            dictionary.loc[len(dictionary)] = [sourcefile['directory'], sourcefile['file'], r['column'], r['comment'], r['onehot'], r['category'], r['continuous'], r['text'], r['group'], r['rank'], r['days'], r['age']]
+            dictionary.loc[len(dictionary)] = [sourcefile['path'], sourcefile['file'], r['column'], r['comment'], r['onehot'], r['category'], r['continuous'], r['text'], r['group'], r['rank'], r['days'], r['age']]
 
-    if args.verbose:
+    if args.debug:
         print("Dictionary processed")
 
     # read source sources
-    if args.verbose:
+    if args.info:
         print("Reading source sources",sourcefile['name'],"...")
 
-    sourcefile_file = sourcefile['directory'] + '/' + sourcefile['file']
+    sourcefile_file = sourcefile['path'] + '/' + sourcefile['file']
     if args.columns == None:
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
                                                      header=sourcefile['header_row'], sep=separator,
@@ -163,7 +299,8 @@ for index, sourcefile in sourcefiles.iterrows():
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-                                                     usecols=sourcecolumns,
+                                                     # usecols=sourcecolumns,
+                                                     usecols=lambda x: x.strip(' #') in sourcecolumns,
                                                      header=sourcefile['header_row'], sep=separator,
                                                      skiprows=sourcefile['skip_rows'], engine='python',
                                                      quoting=sourcefile['quoting'],
@@ -186,7 +323,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
 
     # show count of unique values per column
-    if args.verbose:
+    if args.debug or args.counts:
         print(sourcefile['name'],":",
             data[sourcefile['name']].nunique()
             )
@@ -195,13 +332,13 @@ for index, sourcefile in sourcefiles.iterrows():
         print()
 
     # read mapping file, if any, and filter by selected columns, if any
-    mapping_file = sourcefile['directory'] + '/' + 'mapping.csv'
+    mapping_file = sourcefile['path'] + '/' + 'mapping.csv'
     map_config_df = pd.DataFrame()
     if not args.generate_config:
         map_config_df = pd.read_csv(mapping_file)
         map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
-        if args.verbose:
+        if args.info:
             print("Mapping Config:",map_config_df)
 
     # for rank and group columns, show the counts of each value
@@ -217,10 +354,10 @@ for index, sourcefile in sourcefiles.iterrows():
         for i, r in dic.iterrows():
             if r['group'] == True or r['rank'] == True:
                 print()
-                print("unique values and counts for",sourcefile['directory'],sourcefile['file'],r['column'])
+                print("unique values and counts for",sourcefile['path'],sourcefile['file'],r['column'])
                 value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
                 print(df)
-                if args.verbose:
+                if args.debug or args.counts:
                     print(value_counts_df)
                     # show column names
                     print("column names for value_counts")
@@ -235,7 +372,7 @@ for index, sourcefile in sourcefiles.iterrows():
             map_config_df.to_csv(mapping_file + '.template', index=False)
 
 
-    # create augmented columns for onehot, mapping, continuous, scaling, categories
+    # create augmented columns for onehot, mapping, continuous, scaling, categories, rank
     if args.onehot or args.categories or args.continuous or args.scaling or args.group or args.rank:
 
         df = data[sourcefile['name']]
@@ -247,11 +384,20 @@ for index, sourcefile in sourcefiles.iterrows():
 
             # get mapping subset for this column, if any (dictionary column name == mapping column name)
             map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
-            # rename columns for effective merging and output
-            map_col_df = map_col_df.drop('column', axis=1)
-            map_col_df.rename(columns={'value': column_name, 'group': column_name + '_grp', 'rank': column_name + '_rank'}, inplace=True)
+            map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
+            # drop columns we don't need, rename as appropriate
+            map_col_df.rename(columns={'value': column_name }, inplace=True)
+            if r['rank'] == False:
+                map_col_df = map_col_df.drop('rank', axis=1)
+            else:
+                map_col_df.rename(columns={'rank': column_name + '_rank'}, inplace=True)
 
-            if args.verbose:
+            if r['group'] == False:
+                map_col_df = map_col_df.drop('group', axis=1)
+            else:
+                map_col_df.rename( columns={'group': column_name + '_grp'}, inplace=True)
+
+            if args.debug:
                 print("Map config for column:",column_name)
                 print(map_col_df)
 
@@ -278,23 +424,9 @@ for index, sourcefile in sourcefiles.iterrows():
                     how='left',
                     suffixes=('','_'+column_name)
                 )
-                print("Not yet implemented")
-                # TODO: should we use ranking as just the order, or use it as a numeric mapping?
+                if args.info:
+                    print("Merged for rank/group:", df)
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
-                # mapping for column must be in mapping.csv file and include a rank value
-                # get ranking values and ranks from mapping.csv
-                # sources = {'Education': ['High School', 'Bachelor', 'Master', 'PhD', 'Bachelor']}
-                # df = pd.DataFrame(sources)
-                # education_order = ['High School', 'Bachelor', 'Master', 'PhD']
-                # df['Education_OrdinalEncoded'] = df['Education'].apply(lambda x: education_order.index(x))
-                # print(df)
-
-            # mapping
-            #if args.rank and r['rank'] == True:
-            #    print("Not yet implemented")
-            #    encoded_column_name = 'xxxx' # use "group-name" from config?
-            #    # TODO:
-            #    #
 
             # continuous
             #  z-score?  https://www.analyticsvidhya.com/blog/2015/11/8-ways-deal-continuous-variables-predictive-modeling/
@@ -305,20 +437,24 @@ for index, sourcefile in sourcefiles.iterrows():
 
             # scaling
 
-
             # TODO: add a field level "missing" configuration to specify a strategy for handling missing sources
             # N/A, null, Empty, ?, none, empty, -, NaN, etc.
             # Strategies: variable deletion, mean/median imputation, most common value, ???
-    if args.verbose:
-        print("Data:", df)
+
+            # copy back to our data array
+            data[sourcefile['name']] = df
+
+    if args.info:
+        print("Data:", data[sourcefile['name']])
 
 # show the dictionary
-if args.verbose:
+if args.debug:
     print("Columns:",args.columns)
     print("Dictionary:",dictionary)
 
-exit(0)
-# try using merge to join sources sources
+# merge selected source files by join-group
+# exit(0)
+# try using merge to join sources
 print("sources.keys:", data.keys())
 # summarize our sources
 for d in data.keys():
@@ -330,9 +466,14 @@ for d in data.keys():
     # print(sources[d].describe())
     print(data[d].columns.values.tolist())
 
+    # TODO: ultimately we want a single file, not one per source so need to merge in this loop then output below
+    # generate output file
+    data[d].to_csv(args.output, index=False)
+
 print()
 print()
 print()
+
 exit(0)
 # determine best configuration for pre-defining possible merges
 

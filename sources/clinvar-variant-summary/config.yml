@@ -1,0 +1,13 @@
+--- # ClinVar Variant Summary
+- name: clinvar-variant-summary
+  url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
+  download_file: variant_summary.txt.gz
+  file: variant_summary.txt
+  gzip: 1
+  header_row: 0
+  skip_rows: 0
+  delimiter: tab
+  quoting: 0
+  strip_hash: 1
+  md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz.md5
+  md5_file: variant_summary.txt.gz.md5

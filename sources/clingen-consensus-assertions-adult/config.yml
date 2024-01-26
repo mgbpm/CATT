@@ -1,0 +1,11 @@
+--- # ClinGen Consensus Assertions Adults
+- name: clingen-consensus-assertions-adult
+  url: https://actionability.clinicalgenome.org/ac/Adult/api/summ/assertion?format=tsv
+  file: clingen-consensus-assertions-adult.tsv
+  header_row: 0
+  skip_rows: 0
+  delimiter: tab
+  quoting: 0
+  strip_hash: 1
+  md5_url:
+  md5_file:

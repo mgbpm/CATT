@@ -1,0 +1,11 @@
+--- # ClinGen Gene Disease
+- name: clingen-gene-disease
+  url: https://search.clinicalgenome.org/kb/gene-validity/download
+  file: gene-disease-summary.tsv
+  header_row: 3
+  skip_rows: 1
+  delimiter: comma
+  quoting: 0
+  strip_hash: 0
+  md5_url:
+  md5_file:

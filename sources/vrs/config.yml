@@ -1,0 +1,11 @@
+--- # VRS to VariantID mapping
+- name: vrs
+  url:
+  file: vrs.csv
+  header_row: 0
+  skip_rows: 0
+  delimiter: comma
+  quoting: 0
+  strip_hash: 0
+  md5_url:
+  md5_file:
