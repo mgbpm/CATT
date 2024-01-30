@@ -6,6 +6,7 @@ import yaml
 from os import access, R_OK
 from os.path import isfile
 import requests
+import hashlib
 
 
 # TODO:
@@ -24,12 +25,27 @@ import requests
 #     with open('file.txt', 'wb') as f_out:
 #         shutil.copyfileobj(f_in, f_out)
 
+# TODO:
+#  ** allow md5 checksum comparison for downloaded file
+#  compare md5 checksum of file or download_file to value contained in md5 checksum file
+# import hashlib
+
+def get_md5(filename_with_path):
+    file_hash = hashlib.md5()
+    with open(filename_with_path, "rb") as f:
+        while chunk := f.read(8192):
+            file_hash.update(chunk)
+        if args.debug:
+            print(file_hash.digest())
+            print(file_hash.hexdigest())  # to get a printable str instead of bytes
+    return file_hash.hexdigest()
 
 # constants
 one_hot_prefix = 'hot'
 categories_prefix = 'cat'
 ordinal_prefix = 'ord'
 rank_prefix = 'rnk'
+sources_path = '../sources'
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
@@ -63,7 +79,7 @@ parser.add_argument('--rank', action='store_true', help="Generate new columns ba
 parser.add_argument('--download', action='store_true', help="Download datafiles that are not present. No processing or output with this option.")
 parser.add_argument('--force', action='store_true', help="Download datafiles even if present and overwrite (with --download).")
 parser.add_argument('--counts', action='store_true', help="Generate unique value counts for columns configured for mapping and ranking.")
-parser.add_argument('--generate-config', action='store_true', dest='generate_config', help="Generate mapping and ranking templates (requires --counts).")
+parser.add_argument('--generate-config', action='store_true', dest='generate_config', help="Generate templates for config.yml, dictionary.csv, and mapping.csv (--counts will also include value frequencies).")
 
 # output control
 parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
@@ -89,6 +105,44 @@ args = parser.parse_args()
         # --check; validate input options, validate files exist, validate dictionaries complete
 
 
+###############################
+#
+# GENERATE CONFIGURATION YML
+#
+###############################
+config_yml = """--- # Source file description
+- name: source-name # usually directory name
+  url: # put download url here (e.g. https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)
+  download_file: # put name of download file here if different from final file name (e.g. if you download gz first) (optional)
+  file: data.tsv # put name of download file here (if gzip then put the final unzipped name here)
+  gzip: 0 # 0 = no gzip, 1 = use gunzip to transform download_file to file
+  header_row: 0 # the row number in file that contains the column headers starting at row zero for first line
+  skip_rows: 0 # how many rows to skip after header for first data line
+  delimiter: tab # tab or csv delimited?
+  quoting: 0 # Pandas read_csv quoting strategy for the file {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}
+  strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
+  md5_url: # Download url for md5 checksum file (optional)
+  md5_file: # Name of md5 checksum file to download (optional)
+"""
+if args.generate_config:
+    cnt = 0
+    for root, dirs, files in os.walk(sources_path):
+        for d in dirs:
+            yml = '{}/{}/{}'.format(sources_path, d, 'config.yml')
+            if isfile(yml) and access(yml, R_OK):
+                if args.debug:
+                    print("Found existing config.yml", yml)
+            else:
+                cnt += 1
+                if args.info:
+                    print("Need to create", yml)
+                with open(yml, 'w') as file:
+                    file.write(config_yml)
+    if cnt == 0:
+        print("All data sources have a config.yml")
+    else:
+        print("Created",cnt,"config.yml files.")
+
 #########################
 #
 # LOAD SOURCE CONFIGURATION
@@ -96,12 +150,11 @@ args = parser.parse_args()
 #########################
 
 # find and create a list of all the config.yml files
-startpath = '../sources'
 configList = []
-for root, dirs, files in os.walk(startpath):
+for root, dirs, files in os.walk(sources_path):
     for f in files:
         if f == 'config.yml':
-            file = '{}/{}/{}'.format(startpath, os.path.basename(root), f)
+            file = '{}/{}/{}'.format(sources_path, os.path.basename(root), f)
             configList += [file]
             if args.debug:
                 print(file)
@@ -177,61 +230,80 @@ if args.debug:
 #
 #########################
 
-if args.download:
-    for i, s in sourcefiles.iterrows():
-        source_path = s.get('path')
-        download_file = ''
-        download_file_path = ''
-        if s.get('download_file'):
-            download_file = s.get('download_file')
-            download_file_path = source_path + '/' + download_file
-            if args.debug:
-                print("download_file specified for ", s.get('name'), "as", download_file)
-        md5_file = ''
-        md5_file_path = ''
-        if s.get('md5_file'):
-            md5_file = s.get('md5_file')
-            md5_file_path = source_path + '/' + md5_file
-        datafile = ''
-        datafile_path = ''
-        if s.get('file'):
-            datafile = s.get('file')
-            datafile_path = source_path + '/' + datafile
-            if args.debug:
-                print("datafile specified for ", s.get('name'), "as", datafile_path)
-        # see if the file is present
-        need_download = False
-        if len(datafile_path) > 0:
-            if args.force:
-                need_download = True
-            else:
-                if isfile(datafile_path) and access(datafile_path, R_OK):
-                    if args.debug:
-                        print("Found existing readable file", datafile_path)
-                else:
-                    need_download = True
+# if url, get file
+#   if download_file, move downloaded file to download_file (if not the same)
+#   if file, move downloaded file to file (if not the same)
+# if md5 url,
+#   get md5 file
+#   generate md5 of data file
+#   compare to checksum file (error/exit if no match)
+# if gzip
+#   unzip download_file to file
+
+# TODO: refactor to put if-download within the loop and instead verify all the datafiles?
+
+for i, s in sourcefiles.iterrows():
+    source_path = s.get('path')
+    download_file = ''
+    download_file_path = ''
+    if s.get('download_file'):
+        download_file = s.get('download_file')
+        download_file_path = source_path + '/' + download_file
+        if args.debug:
+            print("download_file specified for ", s.get('name'), "as", download_file)
+    md5_file = ''
+    md5_file_path = ''
+    if s.get('md5_file'):
+        md5_file = s.get('md5_file')
+        md5_file_path = source_path + '/' + md5_file
+    datafile = ''
+    datafile_path = ''
+    if s.get('file'):
+        datafile = s.get('file')
+        datafile_path = source_path + '/' + datafile
+        if args.debug:
+            print("datafile specified for ", s.get('name'), "as", datafile_path)
+    # see if the file is present
+    need_download = False
+    if len(datafile_path) > 0:
+        if args.force:
+            need_download = True
         else:
-            print("No datafile specified for",s.get('name'),"!")
-            exit(-1)
-        if need_download:
+            if isfile(datafile_path) and access(datafile_path, R_OK):
+                if args.debug:
+                    print("Found existing readable file", datafile_path)
+            else:
+                if args.download:
+                    need_download = True
+                else:
+                    print("ERROR: missing source file",datafile_path,"; specify --download to acquire.")
+                    exit(-1)
+    else:
+        print("No datafile specified for",s.get('name'),"!")
+        exit(-1)
+    if need_download:
+        if args.download:
             # need md5 file?
             # download md5
-            if len(download_file) > 0:
-                print("Downoading", s.get('url'), "as", download_file_path)
-                #filename = wget.download(s.get('url'), out=source_path)
-                r = requests.get(s.get('url'))
-                open(download_file_path, 'wb').write(r.content)
-                print("Completed download of", download_file_path)
+            url = s.get('url')
+            if url:
+                if len(download_file) > 0:
+                    print("Downoading", s.get('url'), "as", download_file_path)
+                    #filename = wget.download(s.get('url'), out=source_path)
+                    r = requests.get(s.get('url'))
+                    open(download_file_path, 'wb').write(r.content)
+                    print("Completed download of", download_file_path)
+                else:
+                    print("Downoading", s.get('url'), "as", datafile_path)
+                    #filename = wget.download(s.get('url'), out=source_path)
+                    r = requests.get(s.get('url'))
+                    open(datafile_path, 'wb').write(r.content)
+                    print("Completed download of", datafile_path)
             else:
-                print("Downoading", s.get('url'), "as", datafile_path)
-                #filename = wget.download(s.get('url'), out=source_path)
-                r = requests.get(s.get('url'))
-                open(datafile_path, 'wb').write(r.content)
-                print("Completed download of", datafile_path)
+                print("WARNING: no url for", datafile, "for", s.get('name'))
             print("Complete")
-        else:
-            print("Data file", datafile, "already present.")
-    exit(0) # exit
+    else:
+        print("Data file", datafile, "already present.")
 
 
 #########################
@@ -239,6 +311,33 @@ if args.download:
 # FIELD CONFIG DICTIONARY
 #
 #########################
+
+def generate_dictionary(sourcefile):
+    # open data file
+    # create dataframe with appropriate columns
+    # create one row per column header
+    # save dataframe as csv
+
+#  verify existence of source dictionaries
+missing_dictionary = 0
+for index, sourcefile in sourcefiles.iterrows():
+    dictionary_file = sourcefile['path'] + '/' + sourcefile['dictionary']
+    if isfile(dictionary_file) and access(dictionary_file, R_OK):
+        if args.debug:
+            print("Found dictionary file",dictionary_file)
+    else:
+        print("WARNING: Missing dictionary file",dictionary_file)
+        missing_dictionary += 1
+        if args.generate_config:
+            generate_dictionary(sourcefile)
+
+if missing_dictionary:
+    if not args.generate_config:
+        print(missing_dictionary,"missing dictionaries. Use --generate-config to create template configurations.")
+        exit(-1)
+else:
+    if args.debug:
+        print("Verified all dictionaries exist.")
 
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'onehot', 'category', 'continuous',
@@ -320,7 +419,6 @@ for index, sourcefile in sourcefiles.iterrows():
         print(data[sourcefile['name']])
     else:
         print("Not stripping column labels")
-
 
     # show count of unique values per column
     if args.debug or args.counts:
