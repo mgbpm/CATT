@@ -7,6 +7,8 @@ from os import access, R_OK
 from os.path import isfile
 import requests
 import hashlib
+import gzip
+import shutil
 
 
 # TODO:
@@ -18,27 +20,36 @@ import hashlib
 #  ** add a configuration for allowing n/a value choice, but also have a default
 
 # TODO:
-#  ** allow gzip option for downloads
-# import gzip
-# import shutil
-# with gzip.open('file.txt.gz', 'rb') as f_in:
-#     with open('file.txt', 'wb') as f_out:
-#         shutil.copyfileobj(f_in, f_out)
-
-# TODO:
 #  ** allow md5 checksum comparison for downloaded file
 #  compare md5 checksum of file or download_file to value contained in md5 checksum file
 # import hashlib
 
+def download(downloadurl, filepath):
+    print("Downoading", downloadurl, "as", filepath)
+    req = requests.get(downloadurl)
+    open(filepath, 'wb').write(req.content)
+    print("Completed download of", filepath)
+    return req
+
+
 def get_md5(filename_with_path):
     file_hash = hashlib.md5()
-    with open(filename_with_path, "rb") as f:
-        while chunk := f.read(8192):
+    with open(filename_with_path, "rb") as fp:
+        while chunk := fp.read(8192):
             file_hash.update(chunk)
         if args.debug:
             print(file_hash.digest())
             print(file_hash.hexdigest())  # to get a printable str instead of bytes
     return file_hash.hexdigest()
+
+
+def gunzip_file(fromfilepath, tofilepath):
+    print("Ungzipping", fromfilepath, "to", tofilepath)
+    with gzip.open(fromfilepath, 'rb') as f_in:
+        with open(tofilepath, 'wb') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    print("Completed gunzip")
+
 
 # constants
 one_hot_prefix = 'hot'
@@ -83,12 +94,12 @@ parser.add_argument('--generate-config', action='store_true', dest='generate_con
 
 # output control
 parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
-    type=lambda s: [item for item in s.split(',')]) # validate below against configured sources
+                    type=lambda src: [item for item in src.split(',')])  # validate below against configured sources
 parser.add_argument('-c', '--columns', help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
-    type=lambda s: [item for item in s.split(',')]) # validate below against configured dictionaries
-parser.add_argument( '-o', '--output',  action='store', type=str, default='output.csv', help = 'The desired output file name.' )
-parser.add_argument( '-v', '--variant',  action='store', type=str, help = 'Filter to a specific variant/allele.' )
-parser.add_argument( '-g', '--gene',  action='store', type=str, help = 'Filter to a specific gene (symbol).' )
+                    type=lambda src: [item for item in src.split(',')])  # validate below against configured dictionaries
+parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv', help='The desired output file name.')
+parser.add_argument('-v', '--variant',  action='store', type=str, help='Filter to a specific variant/allele.')
+parser.add_argument('-g', '--gene',  action='store', type=str, help='Filter to a specific gene (symbol).')
 
 
 args = parser.parse_args()
@@ -141,7 +152,7 @@ if args.generate_config:
     if cnt == 0:
         print("All data sources have a config.yml")
     else:
-        print("Created",cnt,"config.yml files.")
+        print("Created", cnt, "config.yml files.")
 
 #########################
 #
@@ -164,10 +175,10 @@ if args.debug:
     print(configList)
 
 # load all the config files into a source list dataframe
-sourcefiles = pd.DataFrame(columns=['name','path','url','download_file','file','gzip','header_row',
-                                    'skip_rows','delimiter','quoting','strip_hash','md5_url','md5_file'])
+sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
+                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file'])
 for c in configList:
-    path = c.replace('/config.yml', '') # path is everything but trailing /config.yml
+    path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
     with open(c, "r") as stream:
         try:
             config = yaml.safe_load(stream)[0]
@@ -202,7 +213,7 @@ if args.debug:
 #########################
 
 # validate sourcefile selections in arguments if any
-if args.sources == None:
+if args.sources is None:
     sources = sourcefiles['name']
 else:
     sources = list(set(sourcefiles['name']) & set(args.sources))
@@ -243,26 +254,24 @@ if args.debug:
 # TODO: refactor to put if-download within the loop and instead verify all the datafiles?
 
 for i, s in sourcefiles.iterrows():
+    name = s.get('name')
     source_path = s.get('path')
-    download_file = ''
+    download_file = s.get('download_file')
     download_file_path = ''
-    if s.get('download_file'):
-        download_file = s.get('download_file')
+    if download_file:
         download_file_path = source_path + '/' + download_file
         if args.debug:
-            print("download_file specified for ", s.get('name'), "as", download_file)
-    md5_file = ''
+            print("download_file specified for ", name, "as", download_file)
+    md5_file = s.get('md5_file')
     md5_file_path = ''
-    if s.get('md5_file'):
-        md5_file = s.get('md5_file')
+    if md5_file:
         md5_file_path = source_path + '/' + md5_file
-    datafile = ''
+    datafile = s.get('file')
     datafile_path = ''
-    if s.get('file'):
-        datafile = s.get('file')
+    if datafile:
         datafile_path = source_path + '/' + datafile
         if args.debug:
-            print("datafile specified for ", s.get('name'), "as", datafile_path)
+            print("datafile specified for ", name, "as", datafile_path)
     # see if the file is present
     need_download = False
     if len(datafile_path) > 0:
@@ -276,32 +285,51 @@ for i, s in sourcefiles.iterrows():
                 if args.download:
                     need_download = True
                 else:
-                    print("ERROR: missing source file",datafile_path,"; specify --download to acquire.")
+                    print("ERROR: missing source file", datafile_path, "; specify --download to acquire.")
                     exit(-1)
     else:
-        print("No datafile specified for",s.get('name'),"!")
+        print("No datafile specified for", name, "!")
         exit(-1)
     if need_download:
         if args.download:
-            # need md5 file?
-            # download md5
+            md5_hash_approved = ''
+            md5_hash_downloaded = ''
+            md5_url = s.get('md5_url')
+            downloaded_file_path = ''
             url = s.get('url')
             if url:
-                if len(download_file) > 0:
-                    print("Downoading", s.get('url'), "as", download_file_path)
-                    #filename = wget.download(s.get('url'), out=source_path)
-                    r = requests.get(s.get('url'))
-                    open(download_file_path, 'wb').write(r.content)
-                    print("Completed download of", download_file_path)
+                if download_file:
+                    r = download(url, download_file_path)
+                    downloaded_file_path = download_file_path
                 else:
-                    print("Downoading", s.get('url'), "as", datafile_path)
-                    #filename = wget.download(s.get('url'), out=source_path)
-                    r = requests.get(s.get('url'))
-                    open(datafile_path, 'wb').write(r.content)
-                    print("Completed download of", datafile_path)
+                    r = download(url, datafile_path)
+                    downloaded_file_path = datafile_path
+                if md5_url:  # if we are doing an md5 check then get the hash for the downloaded file
+                    md5_hash_downloaded = get_md5(downloaded_file_path)
             else:
                 print("WARNING: no url for", datafile, "for", s.get('name'))
-            print("Complete")
+            print("Completed data file download")
+            if md5_url:
+                if md5_file:
+                    r = download(md5_url, md5_file_path)
+                    md5_hash_approved = r.text.split(' ')
+                    if md5_hash_downloaded in md5_hash_approved:
+                        print("MD5 check successful")
+                    else:
+                        print("ERROR: MD5 check failed")
+                        print("Approved:", md5_hash_approved)
+                        print("Downloaded:", md5_hash_downloaded)
+                        exit(-1)
+                else:
+                    print("WARNING: md5_url specified but not md5_file. Not performing checksum.")
+            gzip_flag = s.get('gzip')
+            if gzip_flag:
+                if datafile != download_file:  # for gzip datafile and download file should be different
+                    gunzip_file(downloaded_file_path, datafile_path)
+                else:
+                    print("ERROR: gzip option requires different data and download file names; check config for", name)
+            # else:  if there's a future case where we need to change the name of a non-gzip downloaded file afterward
+
     else:
         print("Data file", datafile, "already present.")
 
@@ -312,11 +340,13 @@ for i, s in sourcefiles.iterrows():
 #
 #########################
 
-def generate_dictionary(sourcefile):
+def generate_dictionary(srcfile):
+    return ''
     # open data file
     # create dataframe with appropriate columns
     # create one row per column header
     # save dataframe as csv
+
 
 #  verify existence of source dictionaries
 missing_dictionary = 0
@@ -324,16 +354,16 @@ for index, sourcefile in sourcefiles.iterrows():
     dictionary_file = sourcefile['path'] + '/' + sourcefile['dictionary']
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
         if args.debug:
-            print("Found dictionary file",dictionary_file)
+            print("Found dictionary file", dictionary_file)
     else:
-        print("WARNING: Missing dictionary file",dictionary_file)
+        print("WARNING: Missing dictionary file", dictionary_file)
         missing_dictionary += 1
         if args.generate_config:
             generate_dictionary(sourcefile)
 
 if missing_dictionary:
     if not args.generate_config:
-        print(missing_dictionary,"missing dictionaries. Use --generate-config to create template configurations.")
+        print(missing_dictionary, "missing dictionaries. Use --generate-config to create template configurations.")
         exit(-1)
 else:
     if args.debug:
@@ -376,7 +406,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
-        if args.columns == None or r['column'] in args.columns:
+        if args.columns is None or r['column'] in args.columns:
             dictionary.loc[len(dictionary)] = [sourcefile['path'], sourcefile['file'], r['column'], r['comment'], r['onehot'], r['category'], r['continuous'], r['text'], r['group'], r['rank'], r['days'], r['age']]
 
     if args.debug:
@@ -384,35 +414,35 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # read source sources
     if args.info:
-        print("Reading source sources",sourcefile['name'],"...")
+        print("Reading source sources", sourcefile['name'], "...")
 
     sourcefile_file = sourcefile['path'] + '/' + sourcefile['file']
-    if args.columns == None:
+    if args.columns is None:
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
                                                      header=sourcefile['header_row'], sep=separator,
                                                      skiprows=sourcefile['skip_rows'], engine='python',
                                                      quoting=sourcefile['quoting'],
-#                                                     nrows=100,
+                                                     #  nrows=100,
                                                      on_bad_lines='warn')})
         sourcecolumns = list(set(dic['column']))
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-                                                     # usecols=sourcecolumns,
+                                                     #  usecols=sourcecolumns,
                                                      usecols=lambda x: x.strip(' #') in sourcecolumns,
                                                      header=sourcefile['header_row'], sep=separator,
                                                      skiprows=sourcefile['skip_rows'], engine='python',
                                                      quoting=sourcefile['quoting'],
-#                                                     nrows=100,
+                                                     #  nrows=100,
                                                      on_bad_lines='warn')})
     if sourcefile['strip_hash'] == 1:
         print("Strip hashes and spaces from column labels")
         df = data[sourcefile['name']]
-        #rename columns
+        # rename columns
         for column in df:
             newcol = column.strip(' #')
             if newcol != column:
-                print("Stripping",column,"to",newcol)
+                print("Stripping", column, "to", newcol)
                 data[sourcefile['name']] = df.rename({column: newcol}, axis='columns')
             else:
                 print("Not stripping colum", column)
@@ -422,9 +452,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # show count of unique values per column
     if args.debug or args.counts:
-        print(sourcefile['name'],":",
-            data[sourcefile['name']].nunique()
-            )
+        print(sourcefile['name'], ":", data[sourcefile['name']].nunique())
         print("Finshed reading source file")
         print()
         print()
@@ -437,7 +465,7 @@ for index, sourcefile in sourcefiles.iterrows():
         map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
         if args.info:
-            print("Mapping Config:",map_config_df)
+            print("Mapping Config:", map_config_df)
 
     # for rank and group columns, show the counts of each value
     if args.counts:
@@ -446,13 +474,13 @@ for index, sourcefile in sourcefiles.iterrows():
         if args.generate_config:
             # create map configs dataframe to collect the values
             map_config_df = pd.DataFrame(
-                columns=['column','value','frequency','group','rank']
+                columns=['column', 'value', 'frequency', 'group', 'rank']
             )
         df = data[sourcefile['name']]
         for i, r in dic.iterrows():
-            if r['group'] == True or r['rank'] == True:
+            if r['group'] is True or r['rank'] is True:
                 print()
-                print("unique values and counts for",sourcefile['path'],sourcefile['file'],r['column'])
+                print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
                 value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
                 print(df)
                 if args.debug or args.counts:
@@ -462,13 +490,12 @@ for index, sourcefile in sourcefiles.iterrows():
                     print(list(value_counts_df))
                 if args.generate_config:
                     # add to the map configs dataframe
-                    print("generate configs for mapping/ranking for",r['column'])
-                    for index, row in value_counts_df.iterrows():
-                        map_config_df.loc[len(map_config_df)] = [ r['column'], row['value'] ,row['count'], '', '' ]
+                    print("generate configs for mapping/ranking for", r['column'])
+                    for ind, row in value_counts_df.iterrows():
+                        map_config_df.loc[len(map_config_df)] = [r['column'], row['value'], row['count'], '', '']
         if args.generate_config:
             # save the map configs dataframe as a "map-template" file in the source file directory
             map_config_df.to_csv(mapping_file + '.template', index=False)
-
 
     # create augmented columns for onehot, mapping, continuous, scaling, categories, rank
     if args.onehot or args.categories or args.continuous or args.scaling or args.group or args.rank:
@@ -484,34 +511,34 @@ for index, sourcefile in sourcefiles.iterrows():
             map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
             map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
             # drop columns we don't need, rename as appropriate
-            map_col_df.rename(columns={'value': column_name }, inplace=True)
-            if r['rank'] == False:
+            map_col_df.rename(columns={'value': column_name}, inplace=True)
+            if r['rank'] is False:
                 map_col_df = map_col_df.drop('rank', axis=1)
             else:
                 map_col_df.rename(columns={'rank': column_name + '_rank'}, inplace=True)
 
-            if r['group'] == False:
+            if r['group'] is False:
                 map_col_df = map_col_df.drop('group', axis=1)
             else:
-                map_col_df.rename( columns={'group': column_name + '_grp'}, inplace=True)
+                map_col_df.rename(columns={'group': column_name + '_grp'}, inplace=True)
 
             if args.debug:
-                print("Map config for column:",column_name)
+                print("Map config for column:", column_name)
                 print(map_col_df)
 
             # onehot encoding
-            if args.onehot and r['onehot'] == True:
+            if args.onehot and r['onehot'] is True:
                 one_hot_encoded = pd.get_dummies(df[r['column']], prefix=one_hot_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
 
             # categories/label encoding
-            if args.categories and r['category'] == True:
+            if args.categories and r['category'] is True:
                 encoder = LabelEncoder()
                 encoded_column_name = categories_prefix + '_' + column_name
                 df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
             # ordinal encoding
-            if (args.rank and r['rank'] == True and len(map_col_df.index) > 0) or (args.group and r['group'] == True and len(map_col_df.index) > 0):
+            if (args.rank and r['rank'] is True and len(map_col_df.index) > 0) or (args.group and r['group'] is True and len(map_col_df.index) > 0):
                 encoded_column_name = rank_prefix + '_' + column_name
                 # df[encoded_column_name] = df.apply(lambda row: map_col_df.loc[map_col_df['value'] == row[column_name], 'rank'], axis=1)
                 df = pd.merge(
@@ -520,7 +547,7 @@ for index, sourcefile in sourcefiles.iterrows():
                     left_on=column_name,
                     right_on=column_name,
                     how='left',
-                    suffixes=('','_'+column_name)
+                    suffixes=('', '_' + column_name)
                 )
                 if args.info:
                     print("Merged for rank/group:", df)
@@ -547,8 +574,8 @@ for index, sourcefile in sourcefiles.iterrows():
 
 # show the dictionary
 if args.debug:
-    print("Columns:",args.columns)
-    print("Dictionary:",dictionary)
+    print("Columns:", args.columns)
+    print("Dictionary:", dictionary)
 
 # merge selected source files by join-group
 # exit(0)
@@ -560,7 +587,7 @@ for d in data.keys():
     print()
     print()
     print()
-    print("columns for ",d,":")
+    print("columns for ", d, ":")
     # print(sources[d].describe())
     print(data[d].columns.values.tolist())
 
@@ -591,4 +618,3 @@ print(merge3.size)
 # allele id
 
 # determine best configuration for column selection
-
