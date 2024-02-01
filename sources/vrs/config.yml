@@ -3,7 +3,7 @@
   url:
   file: vrs.csv
   header_row: 0
-  skip_rows: 0
+  skip_rows: None
   delimiter: comma
   quoting: 0
   strip_hash: 0

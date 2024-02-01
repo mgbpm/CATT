@@ -1,0 +1,13 @@
+column,value,frequency,group,rank
+consensusAssertion,Strong Actionability,117,,1
+consensusAssertion,Moderate Actionability,61,,.5
+consensusAssertion,N/A - Insufficient evidence: early rule-out,30,,-0.01
+consensusAssertion,Assertion Pending,17,,0
+consensusAssertion,Definitive Actionability,11,,0.9
+consensusAssertion,Limited Actionability,8,,0.5
+status-assertion,Complete,212,,1
+status-assertion,Incomplete,32,,0
+status-overall,Released,244,,1
+status-stg1,Complete,213,,1
+status-stg1,Failed,30,,-1
+status-stg1,Incomplete,1,,0

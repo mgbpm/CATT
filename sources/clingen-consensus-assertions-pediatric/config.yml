@@ -3,7 +3,7 @@
   url: https://actionability.clinicalgenome.org/ac/Pediatric/api/summ/assertion?format=tsv
   file: clingen-consensus-assertions-pediatric.tsv
   header_row: 0
-  skip_rows: 0
+  skip_rows: None
   delimiter: tab
   quoting: 0
   strip_hash: 1

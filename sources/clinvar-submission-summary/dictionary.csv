@@ -12,3 +12,5 @@ ReviewStatus,"the level of review for this submission, namely http//www.ncbi.nlm
 "SCV","the accession and current version assigned by ClinVar to the submitted interpretation of the variation-condition relationship",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "SubmittedGeneSymbol","the symbol provided by the submitter for the gene affected by the variant. May be null.",gene-symbol,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
 "ExplanationOfInterpretation","the submitter's preferred term for the interpretation when ClinicalSignificance is submitted as 'other' or 'drug response'. May be null.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
+"SomaticClinicalImpact","the somatic classification of clinical impact on this submitted record",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
+"Oncogenicity","the somatic classification of oncogenicity on this submitted record",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE

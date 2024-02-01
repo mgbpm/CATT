@@ -10,6 +10,26 @@ import hashlib
 import gzip
 import shutil
 
+# TODO: fix group and rank code as it creates repeated column patterns
+# AlleleID,Type,Name,GeneID,GeneSymbol,HGNC_ID,ClinicalSignificance,ClinSigSimple,LastEvaluated,RS# (dbSNP),
+# nsv/esv (dbVar),RCVaccession,PhenotypeIDS,PhenotypeList,Origin,OriginSimple,Assembly,ChromosomeAccession,Chromosome,
+# Start,Stop,ReferenceAllele,AlternateAllele,Cytogenetic,ReviewStatus,NumberSubmitters,Guidelines,TestedInGTR,OtherIDs,
+# SubmitterCategories,VariationID,PositionVCF,ReferenceAlleleVCF,AlternateAlleleVCF,SomaticClinicalImpact,
+# SomaticClinicalImpactLastEvaluated,ReviewStatusClinicalImpact,Oncogenicity,OncogenicityLastEvaluated,
+# ReviewStatusOncogenicity,ClinicalSignificance_grp,ClinicalSignificance_rank,ReviewStatus_rank,
+# ClinicalSignificance_grp_ClinicalSignificance,ClinicalSignificance_rank_ClinicalSignificance,
+# ReviewStatus_rank_ReviewStatus
+# * Seems best way might be to drop these automated identical columns and prevent the original from being changed.
+# * Might need to do the rank and group separately
+# * Can evaluate this as I refactor rank and group to be mutliple mapping types
+
+# TODO: look for missing or deprecated columns in data files as compared to dictionaries and mapping files
+#    (e.g. recent addition of oncology data)
+#    - does dictionary have all the columns, are dictionary columns all present in the file?
+#    - are all mapping columns still present in the file?
+
+# TODO: when creating dictionary template: analyze column data and set category,
+#    onehot, continuous, days, age, based on data types and frequency
 
 # TODO:
 #  ** investigate python template libraries for LLM text generation
@@ -19,10 +39,25 @@ import shutil
 # TODO:
 #  ** add a configuration for allowing n/a value choice, but also have a default
 
-# TODO:
-#  ** allow md5 checksum comparison for downloaded file
-#  compare md5 checksum of file or download_file to value contained in md5 checksum file
-# import hashlib
+
+def skip_array(skiptext):
+    print("type of skiptext is", type(skiptext))
+    if type(skiptext) is str:
+        return eval('['+skiptext+']')
+    if type(skiptext) is int:
+        return eval('['+str(skiptext)+']')
+
+    return eval('['+skiptext.astype(str)+']')
+
+
+def get_separator(delim):
+    if delim == 'tab':
+        return '\t'
+    elif delim == 'comma':
+        return ','
+    else:
+        return None
+
 
 def download(downloadurl, filepath):
     print("Downoading", downloadurl, "as", filepath)
@@ -128,7 +163,7 @@ config_yml = """--- # Source file description
   file: data.tsv # put name of download file here (if gzip then put the final unzipped name here)
   gzip: 0 # 0 = no gzip, 1 = use gunzip to transform download_file to file
   header_row: 0 # the row number in file that contains the column headers starting at row zero for first line
-  skip_rows: 0 # how many rows to skip after header for first data line
+  skip_rows: None # comma separated list of rows to skip starting at 0 before the header (header then 0 after skipped rows)
   delimiter: tab # tab or csv delimited?
   quoting: 0 # Pandas read_csv quoting strategy for the file {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}
   strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
@@ -177,6 +212,7 @@ if args.debug:
 # load all the config files into a source list dataframe
 sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
                                     'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file'])
+
 for c in configList:
     path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
     with open(c, "r") as stream:
@@ -201,6 +237,8 @@ for c in configList:
 # annotate source list with helper columns
 sourcefiles['dictionary'] = sourcefiles.apply(lambda x: 'dictionary.csv', axis=1)
 sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
+
+sourcefiles.set_index('name')
 
 if args.debug:
     print(sourcefiles)
@@ -341,17 +379,39 @@ for i, s in sourcefiles.iterrows():
 #########################
 
 def generate_dictionary(srcfile):
-    return ''
-    # open data file
+    # TODO: analyze column data and set category, onehot, coninutous, days, age, based on data types and frequency
+    print("Creating dictionary template")
+    data_file = srcfile.get('path') + '/' + srcfile.get('file')
+    separator_type = get_separator(srcfile.get('delimiter'))
+    df_data = pd.read_csv(data_file,
+                          header=srcfile.get('header_row'), sep=separator_type,
+                          skiprows=srcfile.get('skip_rows'), engine='python',
+                          quoting=srcfile.get('quoting'),
+                          nrows=0,
+                          on_bad_lines='warn')
+    cols = df_data.columns.tolist()
+    # newcol = column.strip(' #')
     # create dataframe with appropriate columns
+    df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
+                                   'continuous', 'text', 'group', 'rank', 'days', 'age'])
     # create one row per column header
+    defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
+                'text': 'TRUE', 'group': 'FALSE', 'rank': 'FALSE', 'days': 'FALSE', 'age': 'FALSE'}
+    for field in cols:
+        df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
+                                   defaults['category'], defaults['continuous'], defaults['text'], defaults['group'],
+                                   defaults['rank'], defaults['days'], defaults['age']]
     # save dataframe as csv
+    dictemplate = srcfile.get('path') + '/dictionary.csv'
+    df_dic.to_csv(dictemplate, index=False)
+    print("Created dictionary template", dictemplate)
+    return ''
 
 
 #  verify existence of source dictionaries
 missing_dictionary = 0
 for index, sourcefile in sourcefiles.iterrows():
-    dictionary_file = sourcefile['path'] + '/' + sourcefile['dictionary']
+    dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
         if args.debug:
             print("Found dictionary file", dictionary_file)
@@ -370,7 +430,7 @@ else:
         print("Verified all dictionaries exist.")
 
 # setup sources dictionary
-dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'onehot', 'category', 'continuous',
+dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category', 'continuous',
                                    'text', 'group', 'rank', 'days', 'age'])
 data = dict()
 global sourcecolumns, map_config_df
@@ -379,15 +439,9 @@ global sourcecolumns, map_config_df
 for index, sourcefile in sourcefiles.iterrows():
 
     if args.debug:
-        print(sourcefile['path'], sourcefile['file'], sourcefile['dictionary'], "sep='" + sourcefile['delimiter'] + "'")
+        print(sourcefile.get('path'), sourcefile.get('file'), sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
 
-    delimiter = sourcefile['delimiter']
-    if delimiter == 'tab':
-        separator = '\t'
-    elif delimiter == 'comma':
-        separator = ','
-    else:
-        separator = None
+    separator = get_separator(sourcefile.get('delimiter'))
 
     # read source dictionary
     if args.debug:
@@ -395,10 +449,12 @@ for index, sourcefile in sourcefiles.iterrows():
 
     if args.debug:
         print("sourcefile =", sourcefile)
-    dictionary_file = sourcefile['path'] + '/' + sourcefile['dictionary']
+
+    dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
 
     if args.info:
         print("Read dictionary", dictionary_file)
+
     dic = pd.read_csv(dictionary_file)
 
     if args.debug:
@@ -407,33 +463,45 @@ for index, sourcefile in sourcefiles.iterrows():
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
         if args.columns is None or r['column'] in args.columns:
-            dictionary.loc[len(dictionary)] = [sourcefile['path'], sourcefile['file'], r['column'], r['comment'], r['onehot'], r['category'], r['continuous'], r['text'], r['group'], r['rank'], r['days'], r['age']]
+            dictionary.loc[len(dictionary)] = [sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
+                                               r.get('comment'), r.get('join-group'), r.get('onehot'),
+                                               r.get('category'), r.get('continuous'), r.get('text'), r.get('group'),
+                                               r.get('rank'), r.get('days'), r.get('age')]
 
     if args.debug:
         print("Dictionary processed")
 
     # read source sources
     if args.info:
-        print("Reading source sources", sourcefile['name'], "...")
+        print("Reading source sources", sourcefile.get('name'), "...")
 
-    sourcefile_file = sourcefile['path'] + '/' + sourcefile['file']
+    sourcefile_file = sourcefile.get('path') + '/' + sourcefile.get('file')
+
     if args.columns is None:
-        data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-                                                     header=sourcefile['header_row'], sep=separator,
-                                                     skiprows=sourcefile['skip_rows'], engine='python',
-                                                     quoting=sourcefile['quoting'],
-                                                     #  nrows=100,
-                                                     on_bad_lines='warn')})
+        df_tmp = pd.read_csv(sourcefile_file,
+                             header=sourcefile.get('header_row'), sep=separator,
+                             skiprows=skip_array(sourcefile.get('skip_rows')), engine='python',
+                             quoting=sourcefile.get('quoting'),
+                             # nrows=100,
+                             on_bad_lines='warn')
+        print("File header contains columns:", df_tmp.columns)
+        data.update({sourcefile['name']: df_tmp})
+        # data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
+        #                                              header=sourcefile.get('header_row'), sep=separator,
+        #                                              skiprows=sourcefile.get('skip_rows'), engine='python',
+        #                                              quoting=sourcefile.get('quoting'),
+        #                                              nrows=100,
+        #                                              on_bad_lines='warn')})
         sourcecolumns = list(set(dic['column']))
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
                                                      #  usecols=sourcecolumns,
                                                      usecols=lambda x: x.strip(' #') in sourcecolumns,
-                                                     header=sourcefile['header_row'], sep=separator,
-                                                     skiprows=sourcefile['skip_rows'], engine='python',
-                                                     quoting=sourcefile['quoting'],
-                                                     #  nrows=100,
+                                                     header=sourcefile.get('header_row'), sep=separator,
+                                                     skiprows=sourcefile.get('skip_rows'), engine='python',
+                                                     quoting=sourcefile.get('quoting'),
+                                                     # nrows=100,
                                                      on_bad_lines='warn')})
     if sourcefile['strip_hash'] == 1:
         print("Strip hashes and spaces from column labels")
@@ -541,14 +609,20 @@ for index, sourcefile in sourcefiles.iterrows():
             if (args.rank and r['rank'] is True and len(map_col_df.index) > 0) or (args.group and r['group'] is True and len(map_col_df.index) > 0):
                 encoded_column_name = rank_prefix + '_' + column_name
                 # df[encoded_column_name] = df.apply(lambda row: map_col_df.loc[map_col_df['value'] == row[column_name], 'rank'], axis=1)
+                if args.debug:
+                    print("Source",sourcefile['name'],": Merging left:",column_name," and right:",column_name)
+
+                df[column_name] = df[column_name].astype(str)
+                map_col_df[column_name] = map_col_df[column_name].astype(str)
                 df = pd.merge(
                     left=df,
                     right=map_col_df,
                     left_on=column_name,
                     right_on=column_name,
                     how='left',
-                    suffixes=('', '_' + column_name)
+                    suffixes=(None, '_' + column_name)
                 )
+
                 if args.info:
                     print("Merged for rank/group:", df)
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
@@ -577,10 +651,19 @@ if args.debug:
     print("Columns:", args.columns)
     print("Dictionary:", dictionary)
 
+
+#########################
+#
+# GENERATE OUTPUT
+#
+#########################
+
 # merge selected source files by join-group
 # exit(0)
 # try using merge to join sources
 print("sources.keys:", data.keys())
+print("sourcefiles:",sourcefiles)
+print("sourcefiles['clingen-gene-disease']:",sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
 # summarize our sources
 for d in data.keys():
     print()
@@ -591,14 +674,16 @@ for d in data.keys():
     # print(sources[d].describe())
     print(data[d].columns.values.tolist())
 
+    # generate intermediate output files, one per source
+    output_file = d + '-' + args.output
+    print("Generating intermediate source output",output_file)
+    out_df = data[d]
+    print("out_df:",out_df)
+    out_df.to_csv(output_file, index=False)
+
     # TODO: ultimately we want a single file, not one per source so need to merge in this loop then output below
-    # generate output file
-    data[d].to_csv(args.output, index=False)
 
-print()
-print()
-print()
-
+print("Exiting")
 exit(0)
 # determine best configuration for pre-defining possible merges
 

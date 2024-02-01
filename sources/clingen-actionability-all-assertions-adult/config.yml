@@ -3,7 +3,7 @@
   url: https://actionability.clinicalgenome.org/ac/Adult/api/summ/assertion?format=tsv&assertionType=all
   file: clingen-actionability-all-assertions-adult.tsv
   header_row: 0
-  skip_rows: 0
+  skip_rows: None
   delimiter: tab
   quoting: 0
   strip_hash: 1

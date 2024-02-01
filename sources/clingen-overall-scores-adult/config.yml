@@ -3,7 +3,7 @@
   url: https://actionability.clinicalgenome.org/ac/Adult/api/summ?format=tsv
   file: clingen-overall-scores-adult.tsv
   header_row: 0
-  skip_rows: 0
+  skip_rows: None
   delimiter: tab
   quoting: 0
   strip_hash: 1
