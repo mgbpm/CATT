@@ -10,26 +10,20 @@ import hashlib
 import gzip
 import shutil
 
-# TODO: fix group and rank code as it creates repeated column patterns
-# AlleleID,Type,Name,GeneID,GeneSymbol,HGNC_ID,ClinicalSignificance,ClinSigSimple,LastEvaluated,RS# (dbSNP),
-# nsv/esv (dbVar),RCVaccession,PhenotypeIDS,PhenotypeList,Origin,OriginSimple,Assembly,ChromosomeAccession,Chromosome,
-# Start,Stop,ReferenceAllele,AlternateAllele,Cytogenetic,ReviewStatus,NumberSubmitters,Guidelines,TestedInGTR,OtherIDs,
-# SubmitterCategories,VariationID,PositionVCF,ReferenceAlleleVCF,AlternateAlleleVCF,SomaticClinicalImpact,
-# SomaticClinicalImpactLastEvaluated,ReviewStatusClinicalImpact,Oncogenicity,OncogenicityLastEvaluated,
-# ReviewStatusOncogenicity,ClinicalSignificance_grp,ClinicalSignificance_rank,ReviewStatus_rank,
-# ClinicalSignificance_grp_ClinicalSignificance,ClinicalSignificance_rank_ClinicalSignificance,
-# ReviewStatus_rank_ReviewStatus
-# * Seems best way might be to drop these automated identical columns and prevent the original from being changed.
-# * Might need to do the rank and group separately
-# * Can evaluate this as I refactor rank and group to be mutliple mapping types
+# TODO: refactor rank/group to allow mutliple groupings with configurable names
+#   * name list can be in the dictionary instead of the TRUE,
+#   * or name list could be a separate alias list column in addition to the T/F flag
+#   * or the name could be incorporated somehome in the mapping file (preferable but might be hard to do)
 
-# TODO: look for missing or deprecated columns in data files as compared to dictionaries and mapping files
+# TODO:
+#  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
 #    (e.g. recent addition of oncology data)
 #    - does dictionary have all the columns, are dictionary columns all present in the file?
 #    - are all mapping columns still present in the file?
 
-# TODO: when creating dictionary template: analyze column data and set category,
-#    onehot, continuous, days, age, based on data types and frequency
+# TODO:
+#  ** when creating dictionary template: analyze column data and set category,
+#       onehot, continuous, days, age, based on data types and frequency
 
 # TODO:
 #  ** investigate python template libraries for LLM text generation
@@ -38,10 +32,11 @@ import shutil
 
 # TODO:
 #  ** add a configuration for allowing n/a value choice, but also have a default
+#  ** probably add as a dictionary configuration?
+#  ** also add a general program flag for a default strategy?
 
 
 def skip_array(skiptext):
-    print("type of skiptext is", type(skiptext))
     if type(skiptext) is str:
         return eval('['+skiptext+']')
     if type(skiptext) is int:
@@ -60,10 +55,12 @@ def get_separator(delim):
 
 
 def download(downloadurl, filepath):
-    print("Downoading", downloadurl, "as", filepath)
+    if args.info:
+        print("Downoading", downloadurl, "as", filepath)
     req = requests.get(downloadurl)
     open(filepath, 'wb').write(req.content)
-    print("Completed download of", filepath)
+    if args.info:
+        print("Completed download of", filepath)
     return req
 
 
@@ -79,11 +76,13 @@ def get_md5(filename_with_path):
 
 
 def gunzip_file(fromfilepath, tofilepath):
-    print("Ungzipping", fromfilepath, "to", tofilepath)
+    if args.info:
+        print("Ungzipping", fromfilepath, "to", tofilepath)
     with gzip.open(fromfilepath, 'rb') as f_in:
         with open(tofilepath, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    print("Completed gunzip")
+    if args.info:
+        print("Completed gunzip")
 
 
 # constants
@@ -114,10 +113,10 @@ parser.add_argument('-d', '--debug', action='store_true', default=False, help="P
 parser.add_argument('-i', '--info', action='store_true',  default=False, help="Provide progress and other information.")
 
 # encoding options
-parser.add_argument('--scaling', action='store_true', help="Min/max scaling for variables to 0 to 1 range.")
+# TODO: parser.add_argument('--scaling', action='store_true', help="Min/max scaling for variables to 0 to 1 range.")
 parser.add_argument('--onehot', action='store_true', help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true', help="Generate category encodings for columns that support it.")
-parser.add_argument('--continuous', action='store_true', help="Generate continuous variables for columns that support it.")
+# TODO: parser.add_argument('--continuous', action='store_true', help="Generate continuous variables for columns that support it.")
 parser.add_argument('--group', action='store_true', help="Generate new columns based on mapping group configuration.")
 parser.add_argument('--rank', action='store_true', help="Generate new columns based on mapping rank configuration.")
 
@@ -133,8 +132,8 @@ parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to 
 parser.add_argument('-c', '--columns', help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
                     type=lambda src: [item for item in src.split(',')])  # validate below against configured dictionaries
 parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv', help='The desired output file name.')
-parser.add_argument('-v', '--variant',  action='store', type=str, help='Filter to a specific variant/allele.')
-parser.add_argument('-g', '--gene',  action='store', type=str, help='Filter to a specific gene (symbol).')
+# TODO: parser.add_argument('-v', '--variant',  action='store', type=str, help='Filter to a specific variant/allele.')
+# TODO: parser.add_argument('-g', '--gene',  action='store', type=str, help='Filter to a specific gene (symbol).')
 
 
 args = parser.parse_args()
@@ -184,10 +183,11 @@ if args.generate_config:
                     print("Need to create", yml)
                 with open(yml, 'w') as file:
                     file.write(config_yml)
-    if cnt == 0:
-        print("All data sources have a config.yml")
-    else:
-        print("Created", cnt, "config.yml files.")
+    if args.info:
+        if cnt == 0:
+            print("All data sources have a config.yml")
+        else:
+            print("Created", cnt, "config.yml files.")
 
 #########################
 #
@@ -379,7 +379,7 @@ for i, s in sourcefiles.iterrows():
 #########################
 
 def generate_dictionary(srcfile):
-    # TODO: analyze column data and set category, onehot, coninutous, days, age, based on data types and frequency
+    # TODO: analyze column data and set category, onehot, continuous, days, age, based on data types and frequency
     print("Creating dictionary template")
     data_file = srcfile.get('path') + '/' + srcfile.get('file')
     separator_type = get_separator(srcfile.get('delimiter'))
@@ -569,9 +569,12 @@ for index, sourcefile in sourcefiles.iterrows():
     if args.onehot or args.categories or args.continuous or args.scaling or args.group or args.rank:
 
         df = data[sourcefile['name']]
+        if args.debug:
+            print("Processing onehot, mapping, etc. for",sourcefile['name'],"df=",df)
 
         # loop through each column and process any configured options
-        for i, r in dictionary.iterrows():
+        # for i, r in dictionary.iterrows():
+        for i, r in dic.iterrows():
 
             column_name = r['column']
 
@@ -596,6 +599,8 @@ for index, sourcefile in sourcefiles.iterrows():
 
             # onehot encoding
             if args.onehot and r['onehot'] is True:
+                if args.debug:
+                    print("One-hot encoding",column_name,"as",one_hot_prefix+column_name)
                 one_hot_encoded = pd.get_dummies(df[r['column']], prefix=one_hot_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
 
@@ -603,6 +608,9 @@ for index, sourcefile in sourcefiles.iterrows():
             if args.categories and r['category'] is True:
                 encoder = LabelEncoder()
                 encoded_column_name = categories_prefix + '_' + column_name
+                if args.debug:
+                    print("Category encoding",column_name,"as",encoded_column_name)
+                    print("Existing values to be encoded:",df)
                 df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
             # ordinal encoding
@@ -620,8 +628,10 @@ for index, sourcefile in sourcefiles.iterrows():
                     left_on=column_name,
                     right_on=column_name,
                     how='left',
-                    suffixes=(None, '_' + column_name)
+                    suffixes=(None, '_remove' )
                 )
+                # get rid of duplicated columns from join
+                df.drop(df.filter(regex='_remove$').columns, axis=1, inplace=True)
 
                 if args.info:
                     print("Merged for rank/group:", df)
@@ -661,29 +671,34 @@ if args.debug:
 # merge selected source files by join-group
 # exit(0)
 # try using merge to join sources
-print("sources.keys:", data.keys())
-print("sourcefiles:",sourcefiles)
-print("sourcefiles['clingen-gene-disease']:",sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
+if args.debug:
+    print("sources.keys:", data.keys())
+    print("sourcefiles:",sourcefiles)
+    print("sourcefiles['clingen-gene-disease']:",sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
 # summarize our sources
 for d in data.keys():
-    print()
-    print()
-    print()
-    print()
-    print("columns for ", d, ":")
-    # print(sources[d].describe())
-    print(data[d].columns.values.tolist())
+    if args.debug:
+        print()
+        print()
+        print()
+        print()
+        print("columns for ", d, ":")
+        # print(sources[d].describe())
+        print(data[d].columns.values.tolist())
 
     # generate intermediate output files, one per source
     output_file = d + '-' + args.output
-    print("Generating intermediate source output",output_file)
+    if args.info:
+        print("Generating intermediate source output",output_file)
     out_df = data[d]
-    print("out_df:",out_df)
+    if args.debug:
+        print("out_df:",out_df)
     out_df.to_csv(output_file, index=False)
 
     # TODO: ultimately we want a single file, not one per source so need to merge in this loop then output below
 
-print("Exiting")
+if args.info:
+    print("Exiting")
 exit(0)
 # determine best configuration for pre-defining possible merges
 

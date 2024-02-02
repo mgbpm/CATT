@@ -1542,11 +1542,11 @@ mondo,7110.0,1.0,,
 mondo,12529.0,1.0,,
 mondo,14332.0,1.0,,
 mondo,11674.0,1.0,,
-suggestedAssertion,Strong Actionability,1101.0,,
-suggestedAssertion,Moderate Actionability,704.0,,
-suggestedAssertion,Limited Actionability,442.0,,
-suggestedAssertion,Assertion Pending,130.0,,
-suggestedAssertion,N/A - Insufficient evidence: expert review,14.0,,
+suggestedAssertion,Strong Actionability,1101.0,,0.9
+suggestedAssertion,Moderate Actionability,704.0,,0.5
+suggestedAssertion,Limited Actionability,442.0,,0.1
+suggestedAssertion,Assertion Pending,130.0,,0
+suggestedAssertion,N/A - Insufficient evidence: expert review,14.0,,-0.01
 scorer,CONSENSUS,184.0,,
 scorer,Scorer G,184.0,,
 scorer,Scorer M,184.0,,
@@ -1564,20 +1564,20 @@ scorer,Scorer K,98.0,,
 scorer,Scorer P,33.0,,
 scorer,Scorer N,9.0,,
 scorer,Scorer O,3.0,,
-preliminaryAssertion,Moderate Actionability,9.0,,
-preliminaryAssertion,Strong Actionability,1.0,,
-preliminaryAssertion,Limited Actionability,1.0,,
-consensusAssertion,Assertion Pending,1075.0,,
-consensusAssertion,Strong Actionability,508.0,,
-consensusAssertion,Moderate Actionability,408.0,,
-consensusAssertion,Limited Actionability,263.0,,
-consensusAssertion,Definitive Actionability,80.0,,
-consensusAssertion,N/A - Insufficient evidence: expert review,51.0,,
-consensusAssertion,No Assertion: scoring group absence,6.0,,
-status-assertion,Complete,2396.0,,
-status-assertion,Incomplete,98.0,,
-status-overall,Released,2490.0,,
-status-overall,Retracted,4.0,,
-status-stg1,Complete,2270.0,,
-status-stg1,Incomplete,181.0,,
-status-stg1,Failed,43.0,,
+preliminaryAssertion,Moderate Actionability,9.0,,0.5
+preliminaryAssertion,Strong Actionability,1.0,,0.9
+preliminaryAssertion,Limited Actionability,1.0,,0.1
+consensusAssertion,Assertion Pending,1075.0,,0
+consensusAssertion,Strong Actionability,508.0,,0.9
+consensusAssertion,Moderate Actionability,408.0,,0.5
+consensusAssertion,Limited Actionability,263.0,,0.1
+consensusAssertion,Definitive Actionability,80.0,,1
+consensusAssertion,N/A - Insufficient evidence: expert review,51.0,,-0.01
+consensusAssertion,No Assertion: scoring group absence,6.0,,-0.01
+status-assertion,Complete,2396.0,,1
+status-assertion,Incomplete,98.0,,0
+status-overall,Released,2490.0,,1
+status-overall,Retracted,4.0,,-1
+status-stg1,Complete,2270.0,,1
+status-stg1,Incomplete,181.0,,0
+status-stg1,Failed,43.0,,-1
