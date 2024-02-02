@@ -10,10 +10,15 @@ import hashlib
 import gzip
 import shutil
 
+# TODO: geneOrVariant column somtimes contains a list of genes (or variants) (see clingen-overall-scores-pediatric)
+#  ** Have to determine how to join on this column; do we split apart into multiple or join using a "contains" approach?
+
 # TODO: refactor rank/group to allow mutliple groupings with configurable names
-#   * name list can be in the dictionary instead of the TRUE,
-#   * or name list could be a separate alias list column in addition to the T/F flag
-#   * or the name could be incorporated somehome in the mapping file (preferable but might be hard to do)
+#  ** The name of the rank/group could be incorporated in the mapping file as a separate indexed field
+#      1. create multiple "sets" when doing mutliple mappings for a column
+#      2. add a new column to mapping.csv called "map-name" and remove the "rank" and "group" and replace
+#      with "map-value". This will allow any number of mappings for the same column and map-name will become the
+#      new column name when incorporated into the dataset with pd.merge.
 
 # TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
@@ -369,7 +374,8 @@ for i, s in sourcefiles.iterrows():
             # else:  if there's a future case where we need to change the name of a non-gzip downloaded file afterward
 
     else:
-        print("Data file", datafile, "already present.")
+        if args.debug:
+            print("Data file", datafile, "already present.")
 
 
 #########################
@@ -484,7 +490,8 @@ for index, sourcefile in sourcefiles.iterrows():
                              quoting=sourcefile.get('quoting'),
                              # nrows=100,
                              on_bad_lines='warn')
-        print("File header contains columns:", df_tmp.columns)
+        if args.debug:
+            print("File header contains columns:", df_tmp.columns)
         data.update({sourcefile['name']: df_tmp})
         # data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
         #                                              header=sourcefile.get('header_row'), sep=separator,
@@ -504,19 +511,24 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      # nrows=100,
                                                      on_bad_lines='warn')})
     if sourcefile['strip_hash'] == 1:
-        print("Strip hashes and spaces from column labels")
+        if args.debug:
+            print("Strip hashes and spaces from column labels")
         df = data[sourcefile['name']]
         # rename columns
         for column in df:
             newcol = column.strip(' #')
             if newcol != column:
-                print("Stripping", column, "to", newcol)
+                if args.debug:
+                    print("Stripping", column, "to", newcol)
                 data[sourcefile['name']] = df.rename({column: newcol}, axis='columns')
             else:
-                print("Not stripping colum", column)
-        print(data[sourcefile['name']])
+                if args.debug:
+                    print("Not stripping colum", column)
+        if args.info:
+            print(data[sourcefile['name']])
     else:
-        print("Not stripping column labels")
+        if args.debug:
+            print("Not stripping column labels")
 
     # show count of unique values per column
     if args.debug or args.counts:
@@ -550,15 +562,14 @@ for index, sourcefile in sourcefiles.iterrows():
                 print()
                 print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
                 value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
-                print(df)
+                if args.debug:
+                    print(df)
                 if args.debug or args.counts:
                     print(value_counts_df)
-                    # show column names
-                    print("column names for value_counts")
-                    print(list(value_counts_df))
                 if args.generate_config:
                     # add to the map configs dataframe
-                    print("generate configs for mapping/ranking for", r['column'])
+                    if args.debug:
+                        print("generate configs for mapping/ranking for", r['column'])
                     for ind, row in value_counts_df.iterrows():
                         map_config_df.loc[len(map_config_df)] = [r['column'], row['value'], row['count'], '', '']
         if args.generate_config:
@@ -566,7 +577,7 @@ for index, sourcefile in sourcefiles.iterrows():
             map_config_df.to_csv(mapping_file + '.template', index=False)
 
     # create augmented columns for onehot, mapping, continuous, scaling, categories, rank
-    if args.onehot or args.categories or args.continuous or args.scaling or args.group or args.rank:
+    if args.onehot or args.categories or args.group or args.rank:  # or args.continuous or args.scaling
 
         df = data[sourcefile['name']]
         if args.debug:
