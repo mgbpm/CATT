@@ -10,6 +10,10 @@ import hashlib
 import gzip
 import shutil
 
+
+# TODO:
+#  ** generate templated output for use by LLMs
+
 # TODO: geneOrVariant column somtimes contains a list of genes (or variants) (see clingen-overall-scores-pediatric)
 #  ** Have to determine how to join on this column; do we split apart into multiple or join using a "contains" approach?
 
@@ -114,29 +118,41 @@ parser = argparse.ArgumentParser(
                     allow_abbrev=True,
                     exit_on_error=True)
 # debug/info
-parser.add_argument('-d', '--debug', action='store_true', default=False, help="Provide additional debugging and other information.")
-parser.add_argument('-i', '--info', action='store_true',  default=False, help="Provide progress and other information.")
+parser.add_argument('-d', '--debug', action='store_true', default=False,
+                    help="Provide additional debugging and other information.")
+parser.add_argument('-i', '--info', action='store_true',  default=False,
+                    help="Provide progress and other information.")
 
 # encoding options
 # TODO: parser.add_argument('--scaling', action='store_true', help="Min/max scaling for variables to 0 to 1 range.")
-parser.add_argument('--onehot', action='store_true', help="Generate one-hot encodings for columns that support it.")
-parser.add_argument('--categories', action='store_true', help="Generate category encodings for columns that support it.")
-# TODO: parser.add_argument('--continuous', action='store_true', help="Generate continuous variables for columns that support it.")
-parser.add_argument('--group', action='store_true', help="Generate new columns based on mapping group configuration.")
-parser.add_argument('--rank', action='store_true', help="Generate new columns based on mapping rank configuration.")
+parser.add_argument('--onehot', action='store_true',
+                    help="Generate one-hot encodings for columns that support it.")
+parser.add_argument('--categories', action='store_true',
+                    help="Generate category encodings for columns that support it.")
+# TODO: parser.add_argument('--continuous', action='store_true',
+#  help="Generate continuous variables for columns that support it.")
+parser.add_argument('--map', action='store_true',
+                    help="Generate new columns based on mapping group configuration.")
 
 # configuration management
-parser.add_argument('--download', action='store_true', help="Download datafiles that are not present. No processing or output with this option.")
-parser.add_argument('--force', action='store_true', help="Download datafiles even if present and overwrite (with --download).")
-parser.add_argument('--counts', action='store_true', help="Generate unique value counts for columns configured for mapping and ranking.")
-parser.add_argument('--generate-config', action='store_true', dest='generate_config', help="Generate templates for config.yml, dictionary.csv, and mapping.csv (--counts will also include value frequencies).")
+parser.add_argument('--download', action='store_true',
+                    help="Download datafiles that are not present. No processing or output with this option.")
+parser.add_argument('--force', action='store_true',
+                    help="Download datafiles even if present and overwrite (with --download).")
+parser.add_argument('--counts', action='store_true',
+                    help="Generate unique value counts for columns configured for mapping and ranking.")
+parser.add_argument('--generate-config', action='store_true', dest='generate_config',
+                    help="Generate templates for config.yml, dictionary.csv, and mapping.csv.")
 
 # output control
-parser.add_argument('-s', '--sources', help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
-                    type=lambda src: [item for item in src.split(',')])  # validate below against configured sources
-parser.add_argument('-c', '--columns', help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
-                    type=lambda src: [item for item in src.split(',')])  # validate below against configured dictionaries
-parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv', help='The desired output file name.')
+parser.add_argument('-s', '--sources',
+                    help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
+                    type=lambda src: [item for item in src.split(',')])  # validate against configured sources
+parser.add_argument('-c', '--columns',
+                    help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
+                    type=lambda src: [item for item in src.split(',')])  # validate against configured dictionaries
+parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv',
+                    help='The desired output file name.')
 # TODO: parser.add_argument('-v', '--variant',  action='store', type=str, help='Filter to a specific variant/allele.')
 # TODO: parser.add_argument('-g', '--gene',  action='store', type=str, help='Filter to a specific gene (symbol).')
 
@@ -144,15 +160,15 @@ parser.add_argument('-o', '--output',  action='store', type=str, default='output
 args = parser.parse_args()
 
 # source selection
-        # --sources="name1,name2,name3,..."
-    # column selection
-        # --columns="column1,column2,column3..."
-    # filters
-        # --filter="column=value"
-    # debug options
-        # --debug
-        # --info
-        # --check; validate input options, validate files exist, validate dictionaries complete
+# --sources="name1,name2,name3,..."
+# column selection
+# --columns="column1,column2,column3..."
+# filters
+# --filter="column=value"
+# debug options
+# --debug
+# --info
+# --check; validate input options, validate files exist, validate dictionaries complete
 
 
 ###############################
@@ -163,13 +179,13 @@ args = parser.parse_args()
 config_yml = """--- # Source file description
 - name: source-name # usually directory name
   url: # put download url here (e.g. https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)
-  download_file: # put name of download file here if different from final file name (e.g. if you download gz first) (optional)
+  download_file: # put name of download file here if different from final file name (e.g. for gz first) (optional)
   file: data.tsv # put name of download file here (if gzip then put the final unzipped name here)
   gzip: 0 # 0 = no gzip, 1 = use gunzip to transform download_file to file
   header_row: 0 # the row number in file that contains the column headers starting at row zero for first line
-  skip_rows: None # comma separated list of rows to skip starting at 0 before the header (header then 0 after skipped rows)
+  skip_rows: None # comma separated list of rows to skip starting at 0 before the header (header 0 after skipped rows)
   delimiter: tab # tab or csv delimited?
-  quoting: 0 # Pandas read_csv quoting strategy for the file {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}
+  quoting: 0 # Pandas read_csv quoting strategy {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}
   strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
   md5_url: # Download url for md5 checksum file (optional)
   md5_file: # Name of md5 checksum file to download (optional)
@@ -286,7 +302,7 @@ if args.debug:
 
 # if url, get file
 #   if download_file, move downloaded file to download_file (if not the same)
-#   if file, move downloaded file to file (if not the same)
+#   if file exists, move downloaded file to file (if not the same)
 # if md5 url,
 #   get md5 file
 #   generate md5 of data file
@@ -347,7 +363,7 @@ for i, s in sourcefiles.iterrows():
                 else:
                     r = download(url, datafile_path)
                     downloaded_file_path = datafile_path
-                if md5_url:  # if we are doing an md5 check then get the hash for the downloaded file
+                if md5_url:  # if we are doing md5 check then get the hash for the downloaded file
                     md5_hash_downloaded = get_md5(downloaded_file_path)
             else:
                 print("WARNING: no url for", datafile, "for", s.get('name'))
@@ -399,14 +415,14 @@ def generate_dictionary(srcfile):
     # newcol = column.strip(' #')
     # create dataframe with appropriate columns
     df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'group', 'rank', 'days', 'age'])
+                                   'continuous', 'text', 'map', 'days', 'age'])
     # create one row per column header
     defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
-                'text': 'TRUE', 'group': 'FALSE', 'rank': 'FALSE', 'days': 'FALSE', 'age': 'FALSE'}
+                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE'}
     for field in cols:
         df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
-                                   defaults['category'], defaults['continuous'], defaults['text'], defaults['group'],
-                                   defaults['rank'], defaults['days'], defaults['age']]
+                                   defaults['category'], defaults['continuous'], defaults['text'], defaults['map'],
+                                   defaults['days'], defaults['age']]
     # save dataframe as csv
     dictemplate = srcfile.get('path') + '/dictionary.csv'
     df_dic.to_csv(dictemplate, index=False)
@@ -436,8 +452,8 @@ else:
         print("Verified all dictionaries exist.")
 
 # setup sources dictionary
-dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category', 'continuous',
-                                   'text', 'group', 'rank', 'days', 'age'])
+dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
+                                   'continuous', 'text', 'map', 'days', 'age'])
 data = dict()
 global sourcecolumns, map_config_df
 
@@ -445,7 +461,8 @@ global sourcecolumns, map_config_df
 for index, sourcefile in sourcefiles.iterrows():
 
     if args.debug:
-        print(sourcefile.get('path'), sourcefile.get('file'), sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
+        print(sourcefile.get('path'), sourcefile.get('file'),
+              sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
 
     separator = get_separator(sourcefile.get('delimiter'))
 
@@ -471,8 +488,8 @@ for index, sourcefile in sourcefiles.iterrows():
         if args.columns is None or r['column'] in args.columns:
             dictionary.loc[len(dictionary)] = [sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
                                                r.get('comment'), r.get('join-group'), r.get('onehot'),
-                                               r.get('category'), r.get('continuous'), r.get('text'), r.get('group'),
-                                               r.get('rank'), r.get('days'), r.get('age')]
+                                               r.get('category'), r.get('continuous'), r.get('text'), r.get('map'),
+                                               r.get('days'), r.get('age')]
 
     if args.debug:
         print("Dictionary processed")
@@ -547,18 +564,18 @@ for index, sourcefile in sourcefiles.iterrows():
         if args.info:
             print("Mapping Config:", map_config_df)
 
-    # for rank and group columns, show the counts of each value
+    # for rank and group mapping columns, show the counts of each value
     if args.counts:
         # loop through each column that has rank and/or group set to True
         # sourcecolumns has list of columns to sift through for settings
         if args.generate_config:
             # create map configs dataframe to collect the values
             map_config_df = pd.DataFrame(
-                columns=['column', 'value', 'frequency', 'group', 'rank']
+                columns=['column', 'value', 'frequency', 'map-name', 'map-value']
             )
         df = data[sourcefile['name']]
         for i, r in dic.iterrows():
-            if r['group'] is True or r['rank'] is True:
+            if r['map'] is True:
                 print()
                 print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
                 value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
@@ -577,11 +594,11 @@ for index, sourcefile in sourcefiles.iterrows():
             map_config_df.to_csv(mapping_file + '.template', index=False)
 
     # create augmented columns for onehot, mapping, continuous, scaling, categories, rank
-    if args.onehot or args.categories or args.group or args.rank:  # or args.continuous or args.scaling
+    if args.onehot or args.categories or args.map:  # or args.continuous or args.scaling
 
         df = data[sourcefile['name']]
         if args.debug:
-            print("Processing onehot, mapping, etc. for",sourcefile['name'],"df=",df)
+            print("Processing onehot, mapping, etc. for", sourcefile['name'], "df=", df)
 
         # loop through each column and process any configured options
         # for i, r in dictionary.iterrows():
@@ -589,71 +606,80 @@ for index, sourcefile in sourcefiles.iterrows():
 
             column_name = r['column']
 
-            # get mapping subset for this column, if any (dictionary column name == mapping column name)
-            map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
-            map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
-            # drop columns we don't need, rename as appropriate
-            map_col_df.rename(columns={'value': column_name}, inplace=True)
-            if r['rank'] is False:
-                map_col_df = map_col_df.drop('rank', axis=1)
-            else:
-                map_col_df.rename(columns={'rank': column_name + '_rank'}, inplace=True)
+            #
+            # mappings
+            #
+            if args.map and r['map'] is True:
 
-            if r['group'] is False:
-                map_col_df = map_col_df.drop('group', axis=1)
-            else:
-                map_col_df.rename(columns={'group': column_name + '_grp'}, inplace=True)
+                # get mapping subset for this column, if any (dictionary column name == mapping column name)
+                map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
+                map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
+                map_col_df.rename(columns={'value': column_name}, inplace=True)
 
-            if args.debug:
-                print("Map config for column:", column_name)
-                print(map_col_df)
+                if args.debug:
+                    print("Map config for column:", column_name)
+                    print(map_col_df)
 
+                # get list of unique 'map-name' values
+                map_names = map_col_df['map-name'].unique()
+
+                # loop through each 'map-name'
+                if len(map_names) > 0 and len(map_col_df.index) > 0:
+
+                    for m in map_names:
+
+                        # create filtered dataframe for map-name
+                        map_name_df = map_col_df.loc[map_col_df['map-name'] == m]
+                        map_name_df = map_name_df.drop(columns={'map-name'}, axis=1)
+
+                        # rename map-value as the value of map-name in the sub-filtered dataframe
+                        map_name_df.rename(columns={'map-value': m}, inplace=True)
+
+                        # merge based on column-name
+                        df[column_name] = df[column_name].astype(str)
+                        map_name_df[column_name] = map_name_df[column_name].astype(str)
+                        df = pd.merge(
+                            left=df,
+                            right=map_name_df,
+                            left_on=column_name,
+                            right_on=column_name,
+                            how='left',
+                            suffixes=(None, '_remove')
+                        )
+                        # get rid of duplicated columns from join
+                        df.drop(df.filter(regex='_remove$').columns, axis=1, inplace=True)
+
+            #
             # onehot encoding
+            #
             if args.onehot and r['onehot'] is True:
                 if args.debug:
-                    print("One-hot encoding",column_name,"as",one_hot_prefix+column_name)
+                    print("One-hot encoding", column_name, "as", one_hot_prefix+column_name)
                 one_hot_encoded = pd.get_dummies(df[r['column']], prefix=one_hot_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
 
+            #
             # categories/label encoding
+            #
             if args.categories and r['category'] is True:
                 encoder = LabelEncoder()
                 encoded_column_name = categories_prefix + '_' + column_name
                 if args.debug:
-                    print("Category encoding",column_name,"as",encoded_column_name)
-                    print("Existing values to be encoded:",df)
+                    print("Category encoding", column_name, "as", encoded_column_name)
+                    print("Existing values to be encoded:", df)
                 df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
-            # ordinal encoding
-            if (args.rank and r['rank'] is True and len(map_col_df.index) > 0) or (args.group and r['group'] is True and len(map_col_df.index) > 0):
-                encoded_column_name = rank_prefix + '_' + column_name
-                # df[encoded_column_name] = df.apply(lambda row: map_col_df.loc[map_col_df['value'] == row[column_name], 'rank'], axis=1)
-                if args.debug:
-                    print("Source",sourcefile['name'],": Merging left:",column_name," and right:",column_name)
-
-                df[column_name] = df[column_name].astype(str)
-                map_col_df[column_name] = map_col_df[column_name].astype(str)
-                df = pd.merge(
-                    left=df,
-                    right=map_col_df,
-                    left_on=column_name,
-                    right_on=column_name,
-                    how='left',
-                    suffixes=(None, '_remove' )
-                )
-                # get rid of duplicated columns from join
-                df.drop(df.filter(regex='_remove$').columns, axis=1, inplace=True)
-
-                if args.info:
-                    print("Merged for rank/group:", df)
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
 
             # continuous
-            #  z-score?  https://www.analyticsvidhya.com/blog/2015/11/8-ways-deal-continuous-variables-predictive-modeling/
+            #  z-score?
+            #   (https://www.analyticsvidhya.com/blog/2015/11/8-ways-deal-continuous-variables-predictive-modeling/)
             #  log transformation
-            # https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/
-            # min-max Normalization (https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/)
-            # standardization (https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/)
+            #   (https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/)
+            # min-max Normalization
+            #   (https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/)
+            # standardization
+            #   (https://www.freecodecamp.org/news/feature-engineering-and-feature-selection-for-beginners/)
 
             # scaling
 
@@ -684,8 +710,8 @@ if args.debug:
 # try using merge to join sources
 if args.debug:
     print("sources.keys:", data.keys())
-    print("sourcefiles:",sourcefiles)
-    print("sourcefiles['clingen-gene-disease']:",sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
+    print("sourcefiles:", sourcefiles)
+    print("sourcefiles['clingen-gene-disease']:", sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
 # summarize our sources
 for d in data.keys():
     if args.debug:
@@ -700,10 +726,10 @@ for d in data.keys():
     # generate intermediate output files, one per source
     output_file = d + '-' + args.output
     if args.info:
-        print("Generating intermediate source output",output_file)
+        print("Generating intermediate source output", output_file)
     out_df = data[d]
     if args.debug:
-        print("out_df:",out_df)
+        print("out_df:", out_df)
     out_df.to_csv(output_file, index=False)
 
     # TODO: ultimately we want a single file, not one per source so need to merge in this loop then output below
@@ -714,9 +740,12 @@ exit(0)
 # determine best configuration for pre-defining possible merges
 
 print("Merging...")
-merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'], left_on='VariationID', right_on='clinvar_variation_id')
-merge2 = pd.merge(merge1, data['gencc-submissions-submissions'], left_on='GeneSymbol', right_on='gene_symbol')
-merge3 = pd.merge(merge2, data['clingen-dosage-dosage'], left_on='gene_symbol', right_on='GENE SYMBOL')
+merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'],
+                  left_on='VariationID', right_on='clinvar_variation_id')
+merge2 = pd.merge(merge1, data['gencc-submissions-submissions'],
+                  left_on='GeneSymbol', right_on='gene_symbol')
+merge3 = pd.merge(merge2, data['clingen-dosage-dosage'],
+                  left_on='gene_symbol', right_on='GENE SYMBOL')
 print()
 print()
 print("merge3:")
