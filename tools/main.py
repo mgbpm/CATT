@@ -9,6 +9,7 @@ import requests
 import hashlib
 import gzip
 import shutil
+import duckdb
 
 
 # TODO:
@@ -299,18 +300,6 @@ if args.debug:
 # DOWNLOAD DATA FILES
 #
 #########################
-
-# if url, get file
-#   if download_file, move downloaded file to download_file (if not the same)
-#   if file exists, move downloaded file to file (if not the same)
-# if md5 url,
-#   get md5 file
-#   generate md5 of data file
-#   compare to checksum file (error/exit if no match)
-# if gzip
-#   unzip download_file to file
-
-# TODO: refactor to put if-download within the loop and instead verify all the datafiles?
 
 for i, s in sourcefiles.iterrows():
     name = s.get('name')
@@ -701,43 +690,77 @@ if args.debug:
 
 #########################
 #
-# GENERATE OUTPUT
+# PER-SOURCE OUTPUT
 #
 #########################
 
-# merge selected source files by join-group
-# exit(0)
-# try using merge to join sources
+# create per-source output files to debugging purposes
 if args.debug:
     print("sources.keys:", data.keys())
     print("sourcefiles:", sourcefiles)
     print("sourcefiles['clingen-gene-disease']:", sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
-# summarize our sources
+    # summarize our sources
+    for d in data.keys():
+        if args.debug:
+            print("columns for ", d, ":")
+            # print(sources[d].describe())
+            print(data[d].columns.values.tolist())
+
+        # files put in current directory, prepend source name to file
+        output_file = d + '-' + args.output
+        if args.info:
+            print("Generating intermediate source output", output_file)
+        out_df = data[d]
+        if args.debug:
+            print("out_df:", out_df)
+        out_df.to_csv(output_file, index=False)
+
+
+#########################
+#
+# MERGED OUTPUT
+#
+#########################
+# merge selected source files by join-group
+
+#### for each source
+
+    #### accumulate list of sources for each join-group?
+
+#### for each join-group
+
+#### First let's just try DuckDB across all the sources
+
+# create pointers to the dataframes (is it possible to create dynamically named variables? Or keep a hard coded list?)
+# cg_act_all_assert_df = data['clingen-actionability-all-assertions-adult']
+# cg_con_assert_adult_df = data['clingen-consensus-assertions-adult']
+# cg_con_assert_pedi_df = data['clingen-consensus-assertions-pediatric']
+# cg_dosage_df = data['clingen-dosage']
+# cg_gene_disease_df = data['clingen-gene-disease']
+# cg_overall_adult_df = data['clingen-overall-scores-adult']
+# cg_overall_pedi_adf = data['clingen-overall-scores-pediatric']
+# cv_sub_summary_df = data['clinvar-submission-summary']
+# cv_var_summary_df = data['clinvar-variant-summary']
+# vrs_df = data['vrs']
+
+def name_to_variable_name(name):
+    return name.replace("-","_") + '_df'
+
+
+# create a global variable for each source dataframe for use by DuckDB
 for d in data.keys():
-    if args.debug:
-        print()
-        print()
-        print()
-        print()
-        print("columns for ", d, ":")
-        # print(sources[d].describe())
-        print(data[d].columns.values.tolist())
+    globals()[name_to_variable_name(d)] = data[d]
 
-    # generate intermediate output files, one per source
-    output_file = d + '-' + args.output
-    if args.info:
-        print("Generating intermediate source output", output_file)
-    out_df = data[d]
-    if args.debug:
-        print("out_df:", out_df)
-    out_df.to_csv(output_file, index=False)
-
-    # TODO: ultimately we want a single file, not one per source so need to merge in this loop then output below
+results = duckdb.sql("""
+SELECT * 
+FROM clinvar_variant_summary_df a, vrs_df b
+WHERE a.VariationID = b.clinvar_variation_id
+""").df()
+print("results (global):",results)
 
 if args.info:
     print("Exiting")
 exit(0)
-# determine best configuration for pre-defining possible merges
 
 print("Merging...")
 merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'],
