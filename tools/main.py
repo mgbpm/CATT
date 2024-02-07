@@ -11,6 +11,12 @@ import gzip
 import shutil
 import duckdb
 
+# TODO: need to consider joining two tables at a time to manage memory and cpu constraints
+#  ** could do via DuckDB or could do by merging table by table
+#  ** joining more than two large sets fails to complete, unclear of the error
+
+# TODO:
+#  ** one-hot column names are only the hot_ and the value, but should probably include the original column name
 
 # TODO:
 #  ** generate templated output for use by LLMs
@@ -46,12 +52,15 @@ import duckdb
 #  ** also add a general program flag for a default strategy?
 
 
+def name_to_df_variable_name(n):
+    return n.replace("-", "_") + '_df'
+
+
 def skip_array(skiptext):
     if type(skiptext) is str:
         return eval('['+skiptext+']')
     if type(skiptext) is int:
         return eval('['+str(skiptext)+']')
-
     return eval('['+skiptext.astype(str)+']')
 
 
@@ -200,7 +209,7 @@ if args.generate_config:
                 if args.debug:
                     print("Found existing config.yml", yml)
             else:
-                cnt += 1
+                cnt = cnt + 1
                 if args.info:
                     print("Need to create", yml)
                 with open(yml, 'w') as file:
@@ -259,6 +268,7 @@ for c in configList:
 # annotate source list with helper columns
 sourcefiles['dictionary'] = sourcefiles.apply(lambda x: 'dictionary.csv', axis=1)
 sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
+sourcefiles['df_variable_name'] = sourcefiles.apply(lambda x: name_to_df_variable_name(x.get('name')), axis=1)
 
 sourcefiles.set_index('name')
 
@@ -287,7 +297,7 @@ if len(invsources) > 0:
 if args.debug:
     print("Using source files: ", sources)
 
-# restrict source list configuration by names
+# restrict source list by command line option, if any
 if args.sources:
     sourcefiles = sourcefiles.loc[sourcefiles['name'].isin(sources)]
 
@@ -428,7 +438,7 @@ for index, sourcefile in sourcefiles.iterrows():
             print("Found dictionary file", dictionary_file)
     else:
         print("WARNING: Missing dictionary file", dictionary_file)
-        missing_dictionary += 1
+        missing_dictionary = missing_dictionary + 1
         if args.generate_config:
             generate_dictionary(sourcefile)
 
@@ -441,7 +451,7 @@ else:
         print("Verified all dictionaries exist.")
 
 # setup sources dictionary
-dictionary = pd.DataFrame(columns=['path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
+dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
                                    'continuous', 'text', 'map', 'days', 'age'])
 data = dict()
 global sourcecolumns, map_config_df
@@ -475,7 +485,8 @@ for index, sourcefile in sourcefiles.iterrows():
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
         if args.columns is None or r['column'] in args.columns:
-            dictionary.loc[len(dictionary)] = [sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
+            dictionary.loc[len(dictionary)] = [sourcefile.get('name'),
+                                               sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
                                                r.get('comment'), r.get('join-group'), r.get('onehot'),
                                                r.get('category'), r.get('continuous'), r.get('text'), r.get('map'),
                                                r.get('days'), r.get('age')]
@@ -723,59 +734,105 @@ if args.debug:
 #########################
 # merge selected source files by join-group
 
-#### for each source
+# for each source
 
-    #### accumulate list of sources for each join-group?
+    # accumulate list of sources for each join-group?
 
-#### for each join-group
+# for each join-group
 
-#### First let's just try DuckDB across all the sources
+# First let's just try DuckDB across all the sources
 
-# create pointers to the dataframes (is it possible to create dynamically named variables? Or keep a hard coded list?)
-# cg_act_all_assert_df = data['clingen-actionability-all-assertions-adult']
-# cg_con_assert_adult_df = data['clingen-consensus-assertions-adult']
-# cg_con_assert_pedi_df = data['clingen-consensus-assertions-pediatric']
-# cg_dosage_df = data['clingen-dosage']
-# cg_gene_disease_df = data['clingen-gene-disease']
-# cg_overall_adult_df = data['clingen-overall-scores-adult']
-# cg_overall_pedi_adf = data['clingen-overall-scores-pediatric']
-# cv_sub_summary_df = data['clinvar-submission-summary']
-# cv_var_summary_df = data['clinvar-variant-summary']
-# vrs_df = data['vrs']
+# assemble list of tables, aliases, and join columns
+aliases = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
+           "v", "w", "x", "y", "z"]
+sql_from = pd.DataFrame(columns=['name', 'table', 'alias'])
+for index, sourcefile in sourcefiles.iterrows():
 
-def name_to_variable_name(name):
-    return name.replace("-","_") + '_df'
+    # add individual source dataframes to global variable space for use by DuckDB
+    globals()[sourcefile.get('df_variable_name')] = data[sourcefile.get('name')]
+
+    # collect table and alias
+    ind = len(sql_from)
+    if len(aliases) == 0:
+        print("ERROR: need to extend list of table aliases; reached arbitrary predefined limit.")
+        exit(-1)
+    alias = aliases.pop()
+    sql_from.loc[ind] = [sourcefile.get('name'),
+                         sourcefile.get('df_variable_name'),
+                         str(alias)]
+
+# get dictionary for source
+dic_df = dictionary[dictionary['join-group'].notnull()]
+sql_where = pd.DataFrame(columns=['name', 'join-group', 'table', 'alias', 'column'])
+for i, r in dic_df.iterrows():
+    name = r.get('name')
+    sqlf = sql_from[sql_from['name'] == name]
+    ind = len(sql_where)
+    sql_where.loc[ind] = [r.get('name'),
+                          r.get('join-group'),
+                          sqlf.get('table').item(),
+                          sqlf.get('alias').item(),
+                          r.get('column')]
 
 
-# create a global variable for each source dataframe for use by DuckDB
-for d in data.keys():
-    globals()[name_to_variable_name(d)] = data[d]
+def get_from_clause(sf):
+    from_str = f"from "
+    c = 0
+    for i, r in sf.iterrows():
+        if c > 0:
+            from_str = f"{from_str}, "
+        from_str = f"{from_str} {r.get('table')} {r.get('alias')}"
+        c = c + 1
+    print("from clause:", from_str)
+    return from_str
 
-results = duckdb.sql("""
-SELECT * 
-FROM clinvar_variant_summary_df a, vrs_df b
-WHERE a.VariationID = b.clinvar_variation_id
-""").df()
-print("results (global):",results)
+
+def get_where_clause(sw):
+    where_str = f"where "
+    c = 0
+    joins = sw['join-group'].unique()
+    for j in joins:
+        j_df = sw[sw['join-group'] == j]
+        if len(j_df) > 1:
+            print("More than 1 column found in join-group, so need and clause(s)")
+            row = 0
+            for i, r in j_df.iterrows():
+                if row + 1 < len(j_df):
+                    if c > 0:
+                        where_str = f"{where_str} and "
+                    where_str = f"{where_str} {r.get('alias')}.{r.get('column')} = {j_df.iloc[row+1].get('alias')}.{j_df.iloc[row+1].get('column')}"
+                    c = c + 1
+                row = row + 1
+        else:
+            if args.debug:
+                print("Only 1 column found so nothing to join for", j)
+    print("where clause:", where_str)
+    return where_str
+
+# generate sql
+query = 'select * ' + get_from_clause(sql_from) + ' ' + get_where_clause(sql_where)
+print("query:", query)
+results = duckdb.sql(query).df()
+print("results (global):", results)
 
 if args.info:
     print("Exiting")
 exit(0)
 
-print("Merging...")
-merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'],
-                  left_on='VariationID', right_on='clinvar_variation_id')
-merge2 = pd.merge(merge1, data['gencc-submissions-submissions'],
-                  left_on='GeneSymbol', right_on='gene_symbol')
-merge3 = pd.merge(merge2, data['clingen-dosage-dosage'],
-                  left_on='gene_symbol', right_on='GENE SYMBOL')
-print()
-print()
-print("merge3:")
-print(merge3.describe())
-print(merge3.head())
-print(merge3.columns.values.tolist())
-print(merge3.size)
+# print("Merging...")
+# merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'],
+#                  left_on='VariationID', right_on='clinvar_variation_id')
+#merge2 = pd.merge(merge1, data['gencc-submissions-submissions'],
+#                  left_on='GeneSymbol', right_on='gene_symbol')
+#merge3 = pd.merge(merge2, data['clingen-dosage-dosage'],
+#                  left_on='gene_symbol', right_on='GENE SYMBOL')
+#print()
+#print()
+#print("merge3:")
+#print(merge3.describe())
+#print(merge3.head())
+#print(merge3.columns.values.tolist())
+#print(merge3.size)
 # gene
 # variation id
 # allele id
