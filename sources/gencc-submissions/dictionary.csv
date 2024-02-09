@@ -12,8 +12,8 @@
 "moi_title","The mode of inheritance name/title.",,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE
 "submitter_curie","The GenCC submitter code, in the form GENCC:`<code designating submitter>`.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
 "submitter_title","The GenCC submitter for the record.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
-submitted_as_hgnc_id,"The HGNC gene code as submitted.",hgnc-id,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
-submitted_as_hgnc_symbol,"The HGNC gene symbol as submitted.",gene-symbol,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
+submitted_as_hgnc_id,"The HGNC gene code as submitted.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
+submitted_as_hgnc_symbol,"The HGNC gene symbol as submitted.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
 "submitted_as_disease_id","The MONDO or OMIM disease code as submitted.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
 "submitted_as_disease_name","The MONDO or OMIM disease name as submitted.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE
 "submitted_as_moi_id","The mode of inheritance code as submitted (Human Phenotype Ontology).",,FALSE,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE

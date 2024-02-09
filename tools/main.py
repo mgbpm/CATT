@@ -23,6 +23,7 @@ import duckdb
 
 # TODO: geneOrVariant column somtimes contains a list of genes (or variants) (see clingen-overall-scores-pediatric)
 #  ** Have to determine how to join on this column; do we split apart into multiple or join using a "contains" approach?
+#  ** df.loc[4] = df.loc[1].copy() 
 
 # TODO: refactor rank/group to allow mutliple groupings with configurable names
 #  ** The name of the rank/group could be incorporated in the mapping file as a separate indexed field
@@ -163,8 +164,10 @@ parser.add_argument('-c', '--columns',
                     type=lambda src: [item for item in src.split(',')])  # validate against configured dictionaries
 parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv',
                     help='The desired output file name.')
-# TODO: parser.add_argument('-v', '--variant',  action='store', type=str, help='Filter to a specific variant/allele.')
-# TODO: parser.add_argument('-g', '--gene',  action='store', type=str, help='Filter to a specific gene (symbol).')
+parser.add_argument('-v', '--variant',  action='store', type=str,
+                    help='Filter to a specific variant/allele (CV VariationID). Variable must be tagged in join-group.')
+parser.add_argument('-g', '--gene',  action='store', type=str,
+                    help='Filter to a specific gene (symbol). Variable must be tagged in join-group.')
 
 
 args = parser.parse_args()
@@ -547,8 +550,42 @@ for index, sourcefile in sourcefiles.iterrows():
         if args.debug:
             print("Not stripping column labels")
 
+    # is there an optimal spot to filter for gene and variant?
+    if args.gene:
+        dic_filter_df = dic[dic['join-group'] == 'gene-symbol']
+        if len(dic_filter_df) > 0:
+            df = data[sourcefile['name']]
+            if args.debug:
+                print("filter columns with gene-symbol join group and value", args.gene,
+                      "for", sourcefile['name'], "length", len(df))
+            for i, r in dic_filter_df.iterrows():
+                col_name = r['column']
+                if args.debug:
+                    print("filtering column",col_name," = ",args.gene)
+                df = df[df[col_name] == str(args.gene)]
+            if args.debug:
+                print("new length", len(df))
+            data[sourcefile['name']] = df
+
+    if args.variant:
+        dic_filter_df = dic[dic['join-group'] == 'variation-id']
+        if len(dic_filter_df) > 0:
+            df = data[sourcefile['name']]
+            if args.debug:
+                print("filter columns with variation-id join group and value", args.variant,
+                      "for", sourcefile['name'], "length",len(df))
+            for i, r in dic_filter_df.iterrows():
+                col_name = r['column']
+                variants = map(int, args.variant.split(','))
+                if args.debug:
+                    print("filtering column",col_name," = ",args.variant, variants)
+                df = df[df[col_name].isin(variants)]
+            if args.debug:
+                print("new length", len(df))
+            data[sourcefile['name']] = df
+
     # show count of unique values per column
-    if args.debug or args.counts:
+    if args.debug and args.counts:
         print(sourcefile['name'], ":", data[sourcefile['name']].nunique())
         print("Finshed reading source file")
         print()
@@ -814,6 +851,7 @@ query = 'select * ' + get_from_clause(sql_from) + ' ' + get_where_clause(sql_whe
 print("query:", query)
 results = duckdb.sql(query).df()
 print("results (global):", results)
+results.to_csv(args.output, index=False)
 
 if args.info:
     print("Exiting")
