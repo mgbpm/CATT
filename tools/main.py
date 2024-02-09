@@ -23,7 +23,7 @@ import duckdb
 
 # TODO: geneOrVariant column somtimes contains a list of genes (or variants) (see clingen-overall-scores-pediatric)
 #  ** Have to determine how to join on this column; do we split apart into multiple or join using a "contains" approach?
-#  ** df.loc[4] = df.loc[1].copy() 
+#  ** df.loc[4] = df.loc[1].copy()
 
 # TODO: refactor rank/group to allow mutliple groupings with configurable names
 #  ** The name of the rank/group could be incorporated in the mapping file as a separate indexed field
@@ -140,6 +140,8 @@ parser.add_argument('--onehot', action='store_true',
                     help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true',
                     help="Generate category encodings for columns that support it.")
+parser.add_argument('--expand', action='store_true',
+                    help="Generate additional rows when specified columns have lists of values (i.e. list of genes).")
 # TODO: parser.add_argument('--continuous', action='store_true',
 #  help="Generate continuous variables for columns that support it.")
 parser.add_argument('--map', action='store_true',
@@ -417,14 +419,14 @@ def generate_dictionary(srcfile):
     # newcol = column.strip(' #')
     # create dataframe with appropriate columns
     df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age'])
+                                   'continuous', 'text', 'map', 'days', 'age', 'expand'])
     # create one row per column header
     defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
-                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE'}
+                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE'}
     for field in cols:
         df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
                                    defaults['category'], defaults['continuous'], defaults['text'], defaults['map'],
-                                   defaults['days'], defaults['age']]
+                                   defaults['days'], defaults['age'], defaults['expand']]
     # save dataframe as csv
     dictemplate = srcfile.get('path') + '/dictionary.csv'
     df_dic.to_csv(dictemplate, index=False)
@@ -455,7 +457,7 @@ else:
 
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age'])
+                                   'continuous', 'text', 'map', 'days', 'age', 'expand'])
 data = dict()
 global sourcecolumns, map_config_df
 
@@ -492,7 +494,7 @@ for index, sourcefile in sourcefiles.iterrows():
                                                sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
                                                r.get('comment'), r.get('join-group'), r.get('onehot'),
                                                r.get('category'), r.get('continuous'), r.get('text'), r.get('map'),
-                                               r.get('days'), r.get('age')]
+                                               r.get('days'), r.get('age'), r.get('expand')]
 
     if args.debug:
         print("Dictionary processed")
@@ -549,6 +551,28 @@ for index, sourcefile in sourcefiles.iterrows():
     else:
         if args.debug:
             print("Not stripping column labels")
+
+    if args.expand:
+        dic_filter_df = dic[dic['expand'] == True]
+        if len(dic_filter_df) > 0:
+            df = data[sourcefile['name']]
+            if args.debug:
+                print("expand columns for", sourcefile['name'], "length", len(df))
+            for i, r in dic_filter_df.iterrows():
+                col_name = r['column']
+                if args.debug:
+                    print("expanding column", col_name)
+                expandable_rows_df = df[df[col_name].str.contains(",")]
+                # for each row, create a copy with each value
+                for exp_i ,exp_r in expandable_rows_df.iterrows():
+                    values = exp_r[col_name].split(",")
+                    for v in values:
+                        new_row = expandable_rows_df.loc[exp_i].copy()
+                        new_row[col_name] = v
+                        df.loc[len(df)] = new_row
+            if args.debug:
+                print("new length", len(df))
+            data[sourcefile['name']] = df
 
     # is there an optimal spot to filter for gene and variant?
     if args.gene:
@@ -825,7 +849,7 @@ def get_from_clause(sf):
 
 
 def get_where_clause(sw):
-    where_str = f"where "
+    where_str = f""
     c = 0
     joins = sw['join-group'].unique()
     for j in joins:
@@ -844,7 +868,10 @@ def get_where_clause(sw):
             if args.debug:
                 print("Only 1 column found so nothing to join for", j)
     print("where clause:", where_str)
-    return where_str
+    if c > 0:
+        return f"where {where_str}"
+    else:
+        return ""
 
 # generate sql
 query = 'select * ' + get_from_clause(sql_from) + ' ' + get_where_clause(sql_where)
