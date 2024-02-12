@@ -11,6 +11,15 @@ import gzip
 import shutil
 import duckdb
 
+# TODO:
+#  ** DuckDB gives an error when processing column names with spaces.
+#  ** Options:
+#  **    1. Normalize/transform column names to use underscores instead of invalid characters
+#  **     - If we do this, we'll need to do the same for user-selected columns to hide the implementation details
+#  **     - Will also need to save original version to rename in the output file to hide implementation
+#  **    2. Switch to using pandas merge instead of DuckDB which could also fix the scaling issue
+#  ** Tried to fix using a.[column name] as well as a.["column name"] and both fail
+
 # TODO: need to consider joining two tables at a time to manage memory and cpu constraints
 #  ** could do via DuckDB or could do by merging table by table
 #  ** joining more than two large sets fails to complete, unclear of the error
@@ -553,7 +562,7 @@ for index, sourcefile in sourcefiles.iterrows():
             print("Not stripping column labels")
 
     if args.expand:
-        dic_filter_df = dic[dic['expand'] == True]
+        dic_filter_df = dic[dic['expand'] is True]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
             if args.debug:
@@ -564,7 +573,7 @@ for index, sourcefile in sourcefiles.iterrows():
                     print("expanding column", col_name)
                 expandable_rows_df = df[df[col_name].str.contains(",")]
                 # for each row, create a copy with each value
-                for exp_i ,exp_r in expandable_rows_df.iterrows():
+                for exp_i, exp_r in expandable_rows_df.iterrows():
                     values = exp_r[col_name].split(",")
                     for v in values:
                         new_row = expandable_rows_df.loc[exp_i].copy()
@@ -585,7 +594,7 @@ for index, sourcefile in sourcefiles.iterrows():
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
                 if args.debug:
-                    print("filtering column",col_name," = ",args.gene)
+                    print("filtering column", col_name, " = ", args.gene)
                 df = df[df[col_name] == str(args.gene)]
             if args.debug:
                 print("new length", len(df))
@@ -597,12 +606,12 @@ for index, sourcefile in sourcefiles.iterrows():
             df = data[sourcefile['name']]
             if args.debug:
                 print("filter columns with variation-id join group and value", args.variant,
-                      "for", sourcefile['name'], "length",len(df))
+                      "for", sourcefile['name'], "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
                 variants = map(int, args.variant.split(','))
                 if args.debug:
-                    print("filtering column",col_name," = ",args.variant, variants)
+                    print("filtering column", col_name, " = ", args.variant, variants)
                 df = df[df[col_name].isin(variants)]
             if args.debug:
                 print("new length", len(df))
@@ -861,7 +870,7 @@ def get_where_clause(sw):
                 if row + 1 < len(j_df):
                     if c > 0:
                         where_str = f"{where_str} and "
-                    where_str = f"{where_str} {r.get('alias')}.{r.get('column')} = {j_df.iloc[row+1].get('alias')}.{j_df.iloc[row+1].get('column')}"
+                    where_str = f"""{where_str} {r.get('alias')}.["{r.get('column')}"] = {j_df.iloc[row+1].get('alias')}.["{j_df.iloc[row+1].get('column')}"]"""
                     c = c + 1
                 row = row + 1
         else:
@@ -872,6 +881,7 @@ def get_where_clause(sw):
         return f"where {where_str}"
     else:
         return ""
+
 
 # generate sql
 query = 'select * ' + get_from_clause(sql_from) + ' ' + get_where_clause(sql_where)
