@@ -11,9 +11,6 @@ import gzip
 import shutil
 
 # TODO:
-#  ** one-hot column names are only the hot_ and the value, but should probably include the original column name
-
-# TODO:
 #  ** generate templated output for use by LLMs
 
 # TODO:
