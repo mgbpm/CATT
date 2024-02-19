@@ -114,6 +114,19 @@ def gunzip_file(fromfilepath, tofilepath):
         print("Completed gunzip")
 
 
+def get_join_precedence(join_group):
+    if join_group == 'variation-id':
+        return 0
+    elif join_group == 'gene-symbol':
+        return 1
+    elif join_group == 'hgnc-id':
+        return 2
+    elif join_group is not None:
+        return 3
+    else:
+        return 4
+
+
 # constants
 one_hot_prefix = 'hot'
 categories_prefix = 'cat'
@@ -121,8 +134,12 @@ ordinal_prefix = 'ord'
 rank_prefix = 'rnk'
 sources_path = '../sources'
 
+# if multiple joins are possible, choose highest precedence join column
+join_precedence = ('variation-id', 'gene-symbol', 'hgnc-id')
+
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
+pd.options.mode.copy_on_write = True # will become default in Pandas 3
 
 
 #########################
@@ -298,7 +315,7 @@ if args.debug:
 
 # validate sourcefile selections in arguments if any
 if args.sources is None:
-    sources = sourcefiles['name']
+    sources = list(set(sourcefiles['name']))
 else:
     sources = list(set(sourcefiles['name']) & set(args.sources))
 
@@ -562,7 +579,11 @@ for index, sourcefile in sourcefiles.iterrows():
             print("Not stripping column labels")
 
     if args.expand:
-        dic_filter_df = dic[dic['expand'] is True]
+        if args.debug:
+            print("name:", sourcefile['name'])
+            print("dictionary:")
+            print(dic)
+        dic_filter_df = dic[dic.get('expand') == True]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
             if args.debug:
@@ -585,7 +606,9 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # is there an optimal spot to filter for gene and variant?
     if args.gene:
-        dic_filter_df = dic[dic['join-group'] == 'gene-symbol']
+        if args.debug:
+            print("filter genes", args.gene)
+        dic_filter_df = dic.loc[(dic['join-group'] == 'gene-symbol')]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
             if args.debug:
@@ -593,15 +616,18 @@ for index, sourcefile in sourcefiles.iterrows():
                       "for", sourcefile['name'], "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
+                genes = args.gene.split(',')
                 if args.debug:
-                    print("filtering column", col_name, " = ", args.gene)
-                df = df[df[col_name] == str(args.gene)]
+                    print("filtering column", col_name, " in ", genes)
+                df = df.loc[(df[col_name].isin(genes))]
             if args.debug:
                 print("new length", len(df))
             data[sourcefile['name']] = df
 
     if args.variant:
-        dic_filter_df = dic[dic['join-group'] == 'variation-id']
+        if args.debug:
+            print("filter variant", args.variant)
+        dic_filter_df = dic.loc[(dic['join-group'] == 'variation-id')]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
             if args.debug:
@@ -612,7 +638,7 @@ for index, sourcefile in sourcefiles.iterrows():
                 variants = map(int, args.variant.split(','))
                 if args.debug:
                     print("filtering column", col_name, " = ", args.variant, variants)
-                df = df[df[col_name].isin(variants)]
+                df = df.loc[df[col_name].isin(variants)]
             if args.debug:
                 print("new length", len(df))
             data[sourcefile['name']] = df
@@ -804,14 +830,84 @@ if args.debug:
 #########################
 # merge selected source files by join-group
 
-# for each source
+# only merge if sources specified on command line
+if args.sources:
+    # merge by order of sources specified on command line using left joins in sequence
+    if args.info or args.debug:
+        print("Merging data sources:", args.sources)
+    sources_sort = list(args.sources)
 
-    # accumulate list of sources for each join-group?
+    dic_df = dictionary[dictionary['join-group'].notnull()]
+    dic_df['precedence'] = dic_df.apply(lambda x: get_join_precedence(x.get('join-group')), axis=1)
+    out_df = pd.DataFrame()
+    already_joined_dic_df = pd.DataFrame(data=None, columns=dictionary.columns)
+    c = 0
+    for s in sources_sort:
+        if args.debug:
+            print("merging", s, "length data[", s, "]", len(data[s]))
+        # get join columns for s
+        s_dic_df = dic_df.loc[(dic_df['name'] == s)].sort_values(by=['precedence'])
+        # s_join_columns = filter dictionary by s and join-group not null
+        if c == 0:
+            out_df = data[s]
+        else:
+            # pick a join group that has already in a merged dataset, starting with the highest precedence
+            join_groups = s_dic_df['join-group'].unique()
+            if args.debug:
+                print("joins for", s, "include", join_groups)
+                print("prior join groups:", already_joined_dic_df)
+            selected_join_group = None
+            for jg in join_groups:
+                if args.debug:
+                    print("checking if previous merges have", jg)
+                if any(already_joined_dic_df['join-group'] == jg):
+                    selected_join_group = jg
+                    break
+            if selected_join_group is None:
+                print("Didn't find a matching prior join-group for", s)
+                exit(-1)
+            # get the left and right join column names for selected join group
+            left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == selected_join_group)].iloc[
+                0]
+            left_join_column = left_join_df['column']
+            if args.debug:
+                print("Left join column", left_join_column)
 
-# for each join-group
+            right_join_df = s_dic_df.loc[s_dic_df['join-group'] == selected_join_group].iloc[0]
+            right_join_column = right_join_df['column']
+            if args.debug:
+                print("Right join column", right_join_column)
+                print("Out length prior", len(out_df))
+            out_df = pd.merge(out_df, data[s], left_on=left_join_column, right_on=right_join_column)
+            if args.debug:
+                print("Out length after", len(out_df))
+        c = c + 1
+        if args.debug:
+            print("Adding to prior join df", s_dic_df)
+        already_joined_dic_df = pd.concat([already_joined_dic_df, s_dic_df])
+        if args.debug:
+            print("Now prior join df:")
+            print(already_joined_dic_df)
+
+    output_file = args.output
+    if args.info:
+        print("Generating output", output_file)
+    if args.debug:
+        print("out_df:", out_df)
+    out_df.to_csv(output_file, index=False)
+
+if args.info:
+    print("Exiting")
+exit(0)
+
+
+#############################
+#
+# MERGED OUTPUT USING DuckDB
+#
+#############################
 
 # First let's just try DuckDB across all the sources
-
 # assemble list of tables, aliases, and join columns
 aliases = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
            "v", "w", "x", "y", "z"]
@@ -893,23 +989,3 @@ results.to_csv(args.output, index=False)
 if args.info:
     print("Exiting")
 exit(0)
-
-# print("Merging...")
-# merge1 = pd.merge(data['clinvar-variant-summary-summary'], data['clinvar-variant-summary-vrs'],
-#                  left_on='VariationID', right_on='clinvar_variation_id')
-#merge2 = pd.merge(merge1, data['gencc-submissions-submissions'],
-#                  left_on='GeneSymbol', right_on='gene_symbol')
-#merge3 = pd.merge(merge2, data['clingen-dosage-dosage'],
-#                  left_on='gene_symbol', right_on='GENE SYMBOL')
-#print()
-#print()
-#print("merge3:")
-#print(merge3.describe())
-#print(merge3.head())
-#print(merge3.columns.values.tolist())
-#print(merge3.size)
-# gene
-# variation id
-# allele id
-
-# determine best configuration for column selection
