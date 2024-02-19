@@ -9,20 +9,6 @@ import requests
 import hashlib
 import gzip
 import shutil
-import duckdb
-
-# TODO:
-#  ** DuckDB gives an error when processing column names with spaces.
-#  ** Options:
-#  **    1. Normalize/transform column names to use underscores instead of invalid characters
-#  **     - If we do this, we'll need to do the same for user-selected columns to hide the implementation details
-#  **     - Will also need to save original version to rename in the output file to hide implementation
-#  **    2. Switch to using pandas merge instead of DuckDB which could also fix the scaling issue
-#  ** Tried to fix using a.[column name] as well as a.["column name"] and both fail
-
-# TODO: need to consider joining two tables at a time to manage memory and cpu constraints
-#  ** could do via DuckDB or could do by merging table by table
-#  ** joining more than two large sets fails to complete, unclear of the error
 
 # TODO:
 #  ** one-hot column names are only the hot_ and the value, but should probably include the original column name
@@ -84,7 +70,7 @@ def get_separator(delim):
 
 
 def download(downloadurl, filepath):
-    if args.info:
+    if args.debug:
         print("Downoading", downloadurl, "as", filepath)
     req = requests.get(downloadurl)
     open(filepath, 'wb').write(req.content)
@@ -105,13 +91,13 @@ def get_md5(filename_with_path):
 
 
 def gunzip_file(fromfilepath, tofilepath):
-    if args.info:
+    if args.debug:
         print("Ungzipping", fromfilepath, "to", tofilepath)
     with gzip.open(fromfilepath, 'rb') as f_in:
         with open(tofilepath, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
     if args.info:
-        print("Completed gunzip")
+        print("Completed gunzip", tofilepath)
 
 
 def get_join_precedence(join_group):
@@ -192,6 +178,10 @@ parser.add_argument('-c', '--columns',
                     type=lambda src: [item for item in src.split(',')])  # validate against configured dictionaries
 parser.add_argument('-o', '--output',  action='store', type=str, default='output.csv',
                     help='The desired output file name.')
+parser.add_argument('--individual',  action='store_true',
+                    help='Generate intermediate output file for each source.')
+parser.add_argument('--join',  action='store_true',
+                    help='Generate merged output file for sources specified in --sources.')
 parser.add_argument('-v', '--variant',  action='store', type=str,
                     help='Filter to a specific variant/allele (CV VariationID). Variable must be tagged in join-group.')
 parser.add_argument('-g', '--gene',  action='store', type=str,
@@ -199,6 +189,10 @@ parser.add_argument('-g', '--gene',  action='store', type=str,
 
 
 args = parser.parse_args()
+
+if args.join and not args.sources:
+    print("ERROR: must specify --sources when specifying --join. The sources list is the list of data sources to join.")
+    exit(-1)
 
 # source selection
 # --sources="name1,name2,name3,..."
@@ -241,7 +235,7 @@ if args.generate_config:
                     print("Found existing config.yml", yml)
             else:
                 cnt = cnt + 1
-                if args.info:
+                if args.debug:
                     print("Need to create", yml)
                 with open(yml, 'w') as file:
                     file.write(config_yml)
@@ -527,7 +521,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # read source sources
     if args.info:
-        print("Reading source sources", sourcefile.get('name'), "...")
+        print("Reading source for", sourcefile.get('name'), "...")
 
     sourcefile_file = sourcefile.get('path') + '/' + sourcefile.get('file')
 
@@ -572,7 +566,7 @@ for index, sourcefile in sourcefiles.iterrows():
             else:
                 if args.debug:
                     print("Not stripping colum", column)
-        if args.info:
+        if args.debug:
             print(data[sourcefile['name']])
     else:
         if args.debug:
@@ -583,7 +577,7 @@ for index, sourcefile in sourcefiles.iterrows():
             print("name:", sourcefile['name'])
             print("dictionary:")
             print(dic)
-        dic_filter_df = dic[dic.get('expand') == True]
+        dic_filter_df = dic.loc[(dic.get('expand') == True)]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
             if args.debug:
@@ -657,7 +651,7 @@ for index, sourcefile in sourcefiles.iterrows():
         map_config_df = pd.read_csv(mapping_file)
         map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
-        if args.info:
+        if args.debug:
             print("Mapping Config:", map_config_df)
 
     # for rank and group mapping columns, show the counts of each value
@@ -725,7 +719,7 @@ for index, sourcefile in sourcefiles.iterrows():
                     for m in map_names:
 
                         # create filtered dataframe for map-name
-                        map_name_df = map_col_df.loc[map_col_df['map-name'] == m]
+                        map_name_df = map_col_df.loc[(map_col_df['map-name'] == m)]
                         map_name_df = map_name_df.drop(columns={'map-name'}, axis=1)
 
                         # rename map-value as the value of map-name in the sub-filtered dataframe
@@ -786,7 +780,7 @@ for index, sourcefile in sourcefiles.iterrows():
             # copy back to our data array
             data[sourcefile['name']] = df
 
-    if args.info:
+    if args.debug:
         print("Data:", data[sourcefile['name']])
 
 # show the dictionary
@@ -802,10 +796,11 @@ if args.debug:
 #########################
 
 # create per-source output files to debugging purposes
-if args.debug:
-    print("sources.keys:", data.keys())
-    print("sourcefiles:", sourcefiles)
-    print("sourcefiles['clingen-gene-disease']:", sourcefiles.loc[sourcefiles['name'] == 'clingen-gene-disease'])
+if args.individual:
+    if args.debug:
+        print("sources.keys:", data.keys())
+        print("sourcefiles:", sourcefiles)
+        print("sourcefiles['clingen-gene-disease']:", sourcefiles.loc[(sourcefiles['name'] == 'clingen-gene-disease')])
     # summarize our sources
     for d in data.keys():
         if args.debug:
@@ -815,7 +810,7 @@ if args.debug:
 
         # files put in current directory, prepend source name to file
         output_file = d + '-' + args.output
-        if args.info:
+        if args.debug:
             print("Generating intermediate source output", output_file)
         out_df = data[d]
         if args.debug:
@@ -831,161 +826,76 @@ if args.debug:
 # merge selected source files by join-group
 
 # only merge if sources specified on command line
-if args.sources:
-    # merge by order of sources specified on command line using left joins in sequence
-    if args.info or args.debug:
-        print("Merging data sources:", args.sources)
-    sources_sort = list(args.sources)
+if args.join:
+    if args.sources:
+        # merge by order of sources specified on command line using left joins in sequence
+        if args.info or args.debug:
+            print("Merging data sources:", args.sources)
+        sources_sort = list(args.sources)
 
-    dic_df = dictionary[dictionary['join-group'].notnull()]
-    dic_df['precedence'] = dic_df.apply(lambda x: get_join_precedence(x.get('join-group')), axis=1)
-    out_df = pd.DataFrame()
-    already_joined_dic_df = pd.DataFrame(data=None, columns=dictionary.columns)
-    c = 0
-    for s in sources_sort:
-        if args.debug:
-            print("merging", s, "length data[", s, "]", len(data[s]))
-        # get join columns for s
-        s_dic_df = dic_df.loc[(dic_df['name'] == s)].sort_values(by=['precedence'])
-        # s_join_columns = filter dictionary by s and join-group not null
-        if c == 0:
-            out_df = data[s]
-        else:
-            # pick a join group that has already in a merged dataset, starting with the highest precedence
-            join_groups = s_dic_df['join-group'].unique()
-            if args.debug:
-                print("joins for", s, "include", join_groups)
-                print("prior join groups:", already_joined_dic_df)
-            selected_join_group = None
-            for jg in join_groups:
+        dic_df = dictionary[dictionary['join-group'].notnull()]
+        dic_df['precedence'] = dic_df.apply(lambda x: get_join_precedence(x.get('join-group')), axis=1)
+        out_df = pd.DataFrame()
+        already_joined_dic_df = pd.DataFrame(data=None, columns=dictionary.columns)
+        c = 0
+        for s in sources_sort:
+            if args.info:
+                print("Merging", s)
+            # get join columns for s
+            s_dic_df = dic_df.loc[(dic_df['name'] == s)].sort_values(by=['precedence'])
+            # s_join_columns = filter dictionary by s and join-group not null
+            if c == 0:
+                out_df = data[s]
+            else:
+                # pick a join group that has already in a merged dataset, starting with the highest precedence
+                join_groups = s_dic_df['join-group'].unique()
                 if args.debug:
-                    print("checking if previous merges have", jg)
-                if any(already_joined_dic_df['join-group'] == jg):
-                    selected_join_group = jg
-                    break
-            if selected_join_group is None:
-                print("Didn't find a matching prior join-group for", s)
-                exit(-1)
-            # get the left and right join column names for selected join group
-            left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == selected_join_group)].iloc[
-                0]
-            left_join_column = left_join_df['column']
-            if args.debug:
-                print("Left join column", left_join_column)
+                    print("joins for", s, "include", join_groups)
+                    print("prior join groups:", already_joined_dic_df)
+                selected_join_group = None
+                for jg in join_groups:
+                    if args.debug:
+                        print("checking if previous merges have", jg)
+                    if any(already_joined_dic_df['join-group'] == jg):
+                        selected_join_group = jg
+                        break
+                if selected_join_group is None:
+                    print("Didn't find a matching prior join-group for", s)
+                    exit(-1)
+                # get the left and right join column names for selected join group
+                left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == selected_join_group)].iloc[
+                    0]
+                left_join_column = left_join_df['column']
+                if args.debug:
+                    print("Left join column", left_join_column)
 
-            right_join_df = s_dic_df.loc[s_dic_df['join-group'] == selected_join_group].iloc[0]
-            right_join_column = right_join_df['column']
+                right_join_df = s_dic_df.loc[(s_dic_df['join-group'] == selected_join_group)].iloc[0]
+                right_join_column = right_join_df['column']
+                if args.debug:
+                    print("Right join column", right_join_column)
+                    print("Out length prior", len(out_df))
+                out_df = pd.merge(out_df, data[s], how='left', left_on=left_join_column, right_on=right_join_column)
+                if args.debug:
+                    print("Out length after", len(out_df))
+            c = c + 1
             if args.debug:
-                print("Right join column", right_join_column)
-                print("Out length prior", len(out_df))
-            out_df = pd.merge(out_df, data[s], left_on=left_join_column, right_on=right_join_column)
+                print("Adding to prior join df", s_dic_df)
+            already_joined_dic_df = pd.concat([already_joined_dic_df, s_dic_df])
             if args.debug:
-                print("Out length after", len(out_df))
-        c = c + 1
+                print("Now prior join df:")
+                print(already_joined_dic_df)
+
+        output_file = args.output
+        if args.info:
+            print("Generating output", output_file)
         if args.debug:
-            print("Adding to prior join df", s_dic_df)
-        already_joined_dic_df = pd.concat([already_joined_dic_df, s_dic_df])
-        if args.debug:
-            print("Now prior join df:")
-            print(already_joined_dic_df)
-
-    output_file = args.output
-    if args.info:
-        print("Generating output", output_file)
-    if args.debug:
-        print("out_df:", out_df)
-    out_df.to_csv(output_file, index=False)
-
-if args.info:
-    print("Exiting")
-exit(0)
-
-
-#############################
-#
-# MERGED OUTPUT USING DuckDB
-#
-#############################
-
-# First let's just try DuckDB across all the sources
-# assemble list of tables, aliases, and join columns
-aliases = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
-           "v", "w", "x", "y", "z"]
-sql_from = pd.DataFrame(columns=['name', 'table', 'alias'])
-for index, sourcefile in sourcefiles.iterrows():
-
-    # add individual source dataframes to global variable space for use by DuckDB
-    globals()[sourcefile.get('df_variable_name')] = data[sourcefile.get('name')]
-
-    # collect table and alias
-    ind = len(sql_from)
-    if len(aliases) == 0:
-        print("ERROR: need to extend list of table aliases; reached arbitrary predefined limit.")
-        exit(-1)
-    alias = aliases.pop()
-    sql_from.loc[ind] = [sourcefile.get('name'),
-                         sourcefile.get('df_variable_name'),
-                         str(alias)]
-
-# get dictionary for source
-dic_df = dictionary[dictionary['join-group'].notnull()]
-sql_where = pd.DataFrame(columns=['name', 'join-group', 'table', 'alias', 'column'])
-for i, r in dic_df.iterrows():
-    name = r.get('name')
-    sqlf = sql_from[sql_from['name'] == name]
-    ind = len(sql_where)
-    sql_where.loc[ind] = [r.get('name'),
-                          r.get('join-group'),
-                          sqlf.get('table').item(),
-                          sqlf.get('alias').item(),
-                          r.get('column')]
-
-
-def get_from_clause(sf):
-    from_str = f"from "
-    c = 0
-    for i, r in sf.iterrows():
-        if c > 0:
-            from_str = f"{from_str}, "
-        from_str = f"{from_str} {r.get('table')} {r.get('alias')}"
-        c = c + 1
-    print("from clause:", from_str)
-    return from_str
-
-
-def get_where_clause(sw):
-    where_str = f""
-    c = 0
-    joins = sw['join-group'].unique()
-    for j in joins:
-        j_df = sw[sw['join-group'] == j]
-        if len(j_df) > 1:
-            print("More than 1 column found in join-group, so need and clause(s)")
-            row = 0
-            for i, r in j_df.iterrows():
-                if row + 1 < len(j_df):
-                    if c > 0:
-                        where_str = f"{where_str} and "
-                    where_str = f"""{where_str} {r.get('alias')}.["{r.get('column')}"] = {j_df.iloc[row+1].get('alias')}.["{j_df.iloc[row+1].get('column')}"]"""
-                    c = c + 1
-                row = row + 1
-        else:
-            if args.debug:
-                print("Only 1 column found so nothing to join for", j)
-    print("where clause:", where_str)
-    if c > 0:
-        return f"where {where_str}"
+            print("out_df:", out_df)
+        out_df.to_csv(output_file, index=False)
     else:
-        return ""
-
-
-# generate sql
-query = 'select * ' + get_from_clause(sql_from) + ' ' + get_where_clause(sql_where)
-print("query:", query)
-results = duckdb.sql(query).df()
-print("results (global):", results)
-results.to_csv(args.output, index=False)
+        print("ERROR: --join requires at least one source specified with --sources parameter.")
+        exit(-1)
 
 if args.info:
     print("Exiting")
+
 exit(0)
