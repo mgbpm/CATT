@@ -322,6 +322,7 @@ if args.debug:
 #
 #########################
 
+download_count = 0
 for i, s in sourcefiles.iterrows():
     name = s.get('name')
     source_path = s.get('path')
@@ -361,6 +362,7 @@ for i, s in sourcefiles.iterrows():
         exit(-1)
     if need_download:
         if args.download:
+            download_count = download_count + 1
             md5_hash_approved = ''
             md5_hash_downloaded = ''
             md5_url = s.get('md5_url')
@@ -375,9 +377,9 @@ for i, s in sourcefiles.iterrows():
                     downloaded_file_path = datafile_path
                 if md5_url:  # if we are doing md5 check then get the hash for the downloaded file
                     md5_hash_downloaded = get_md5(downloaded_file_path)
+                print("Completed data file download;", downloaded_file_path)
             else:
                 print("WARNING: no url for", datafile, "for", s.get('name'))
-            print("Completed data file download")
             if md5_url:
                 if md5_file:
                     r = download(md5_url, md5_file_path)
@@ -403,6 +405,9 @@ for i, s in sourcefiles.iterrows():
         if args.debug:
             print("Data file", datafile, "already present.")
 
+if args.download:
+    print("Downloading complete;", download_count, "files.")
+    exit(0)
 
 #########################
 #
@@ -810,9 +815,9 @@ if args.individual:
 # MERGED OUTPUT
 #
 #########################
-# merge selected source files by join-group
 
-# only merge if sources specified on command line
+# merge selected source files by join-group
+# only merge if sources specified on command line (--sources)
 if args.join:
     if args.sources:
         # merge by order of sources specified on command line using left joins in sequence
