@@ -16,17 +16,6 @@ import shutil
 # TODO:
 #  ** generate templated output for use by LLMs
 
-# TODO: geneOrVariant column somtimes contains a list of genes (or variants) (see clingen-overall-scores-pediatric)
-#  ** Have to determine how to join on this column; do we split apart into multiple or join using a "contains" approach?
-#  ** df.loc[4] = df.loc[1].copy()
-
-# TODO: refactor rank/group to allow mutliple groupings with configurable names
-#  ** The name of the rank/group could be incorporated in the mapping file as a separate indexed field
-#      1. create multiple "sets" when doing mutliple mappings for a column
-#      2. add a new column to mapping.csv called "map-name" and remove the "rank" and "group" and replace
-#      with "map-value". This will allow any number of mappings for the same column and map-name will become the
-#      new column name when incorporated into the dataset with pd.merge.
-
 # TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
 #    (e.g. recent addition of oncology data)
@@ -745,7 +734,8 @@ for index, sourcefile in sourcefiles.iterrows():
             if args.onehot and r['onehot'] is True:
                 if args.debug:
                     print("One-hot encoding", column_name, "as", one_hot_prefix+column_name)
-                one_hot_encoded = pd.get_dummies(df[r['column']], prefix=one_hot_prefix)
+                oh_prefix = column_name + '_' + one_hot_prefix + '_'
+                one_hot_encoded = pd.get_dummies(df[column_name], prefix=oh_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
 
             #
