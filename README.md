@@ -15,14 +15,14 @@ Tools for preparing ClinGen, ClinVar and GenCC datasets for use in machine learn
 
 ## Prerequisites
 
-Python 3 is required, as well as the following modules.
+Python 3 is required (tested with Python 3.9.18), as well as the following modules.
 ```
  python -m pip install pandas argparse sklearn.preprocessing pyyaml requests
 ```
 
 ## Usage
 
-To use the clingen-ai-tools, run the `main.py` script in the ./tools sub-directory. 
+To use `clingen-ai-tools`, run the `main.py` script in the `./tools` sub-directory. 
 
 Command line options include:
 
@@ -65,17 +65,51 @@ python main.py --debug --expand --onehot -cateogries --individual --sources="cli
 ```
 
 ## Source Configuration
+The program looks for sources in the ./sources subdirectory. By convention, the "name" of a source is the name of its 
+subdirectory. Each source subdirectory has from 2 to 3 configuration files: `config.yml`, `dictionary.csv`, and 
+optionally `mapping.csv`. These contain metadata for the file, fields, and field values of the source, and control
+how the source is downloaded and transformed by the program.
 
-The program looks for sources in the ./sources sub-directory. A valid source is one that has a `config.yml` file.
+### config.yml
+A valid source is one that has a `config.yml` file in its directory.
 A `config.yml` file contains meta-data about the source such as the url for downloading, optional md5 checksum
-file, file format (csv or tab-delimited), quoting strategy, header row location, etc.
+file, file format (csv or tab-delimited), quoting strategy, header row location, whether to unzip the downloaded file,
+and whether to strip extraneous # characters from the header.
 
+This example shows the `config.yml` for the ClinVar Variant Summary source. The `name` matches the source subdirectory
+name. The `url` is used to download the data file to the `download_file` (if specified) or `file` (if download_file is 
+not specified). The downloaded file is then uncompressed as directed by the `gzip` flag to `file`.
+
+The file header is the first (0) row following the list of rows to skip `skip_rows`. The format of the file is
+tab-delimited (`tab`).
+
+```
+--- # ClinVar Submission Summary
+- name: clinvar-submission-summary
+  url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz
+  download_file: submission_summary.txt.gz
+  gzip: 1
+  file: submission_summary.txt
+  header_row: 0
+  skip_rows: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+  delimiter: tab
+  quoting: 3
+  strip_hash: 1
+  md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz.md5
+  md5_file: submission_summary.txt.gz.md5
+```
+
+### dictionary.csv
 Each source should also have a `dictionary.csv` file which provides meta-data about the columns in the source file.
 It includes a row for each column which contains the field name, definition, joinability group, and flags to enable
 one-hot encoding, categorical encoding, mapping, row expansion, etc.
 
+### mapping.csv
 Each source may optionally have `mapping.csv` file. If the `map` column is set to true in the dictionary for a specific
 field, then the mapping file will be used to map values in the specified column to new values as specified in the map
 file. Multiple mapping sets can exist for a field and each will generate a new output column in which values for the
 original field are mapped to new values via a simple lookup strategy. The new output column will be named according
 to the `map-name` column in the map.
+
+
+## Adding a New Source
