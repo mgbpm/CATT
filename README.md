@@ -13,6 +13,13 @@ Tools for preparing ClinGen, ClinVar and GenCC datasets for use in machine learn
 * Extendable to new data sources through configuration
 * Generates new configuration files for new sources, including value counts
 
+## Prerequisites
+
+Python 3 is required, as well as the following modules.
+```
+ python -m pip install pandas argparse sklearn.preprocessing pyyaml requests
+```
+
 ## Usage
 
 To use the clingen-ai-tools, run the `main.py` script in the ./tools sub-directory. 
