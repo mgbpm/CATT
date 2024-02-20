@@ -33,6 +33,9 @@ import shutil
 #  ** probably add as a dictionary configuration?
 #  ** also add a general program flag for a default strategy?
 
+# TODO:
+#  ** add data value processing (age, days since, etc.)
+#  ** include support for various data formats
 
 def name_to_df_variable_name(n):
     return n.replace("-", "_") + '_df'
