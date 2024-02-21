@@ -37,10 +37,6 @@ import shutil
 #  ** add data value processing (age, days since, etc.)
 #  ** include support for various data formats
 
-def name_to_df_variable_name(n):
-    return n.replace("-", "_") + '_df'
-
-
 def skip_array(skiptext):
     if type(skiptext) is str:
         return eval('['+skiptext+']')
@@ -107,7 +103,7 @@ one_hot_prefix = 'hot'
 categories_prefix = 'cat'
 ordinal_prefix = 'ord'
 rank_prefix = 'rnk'
-sources_path = '../sources'
+sources_path = './sources'
 
 # if multiple joins are possible, choose highest precedence join column
 join_precedence = ('variation-id', 'gene-symbol', 'hgnc-id')
@@ -136,17 +132,24 @@ parser.add_argument('-i', '--info', action='store_true',  default=False,
                     help="Provide progress and other information.")
 
 # encoding options
-# TODO: parser.add_argument('--scaling', action='store_true', help="Min/max scaling for variables to 0 to 1 range.")
 parser.add_argument('--onehot', action='store_true',
                     help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true',
                     help="Generate category encodings for columns that support it.")
 parser.add_argument('--expand', action='store_true',
                     help="Generate additional rows when specified columns have lists of values (i.e. list of genes).")
-# TODO: parser.add_argument('--continuous', action='store_true',
-#  help="Generate continuous variables for columns that support it.")
 parser.add_argument('--map', action='store_true',
                     help="Generate new columns based on mapping group configuration.")
+parser.add_argument('--na-value', action='store', dest='na_value', type=int, default=-1,
+                    help='A numeric value to use when a value is n/a. Defaults to -1. Also configurable per column.')
+parser.add_argument('--days', action='store_true',
+                    help="Generate output column transforming date column to days since 1 Jan 1970.")
+parser.add_argument('--age', action='store_true',
+                    help="Generate output column transforming date column to days since date value.")
+# TODO: parser.add_argument('--continuous', action='store_true',
+#                           help="Generate continuous variables for columns that support it.")
+# TODO: parser.add_argument('--scaling', action='store_true',
+#                           help="Min/max scaling for variables to 0 to 1 range.")
 
 # configuration management
 parser.add_argument('--download', action='store_true',
@@ -282,7 +285,6 @@ for c in configList:
 # annotate source list with helper columns
 sourcefiles['dictionary'] = sourcefiles.apply(lambda x: 'dictionary.csv', axis=1)
 sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
-sourcefiles['df_variable_name'] = sourcefiles.apply(lambda x: name_to_df_variable_name(x.get('name')), axis=1)
 
 sourcefiles.set_index('name')
 
@@ -851,7 +853,8 @@ if args.join:
                 for jg in join_groups:
                     if args.debug:
                         print("checking if previous merges have", jg)
-                    if any(already_joined_dic_df['join-group'] == jg):
+                    # if any(already_joined_dic_df['join-group'] == jg):
+                    if (already_joined_dic_df['join-group'] == jg).any():
                         selected_join_group = jg
                         break
                 if selected_join_group is None:

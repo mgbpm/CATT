@@ -22,7 +22,7 @@ Python 3 is required (tested with Python 3.9.18), as well as the following modul
 
 ## Usage
 
-To use `clingen-ai-tools`, run the `main.py` script in the `./tools` sub-directory. 
+To use `clingen-ai-tools`, run the `main.py` script in the root project directory. 
 
 Command line options include:
 
@@ -195,7 +195,7 @@ directory name. Then run the program using --generate-config.
 ```commandline
 cd ./sources
 mkdir new-source-file-name
-cd ../tools
+cd ..
 python main.py --generate-config
 ```
 This will create a `config.yml` in the ./new-source-file-name directory which will need to be edited.
