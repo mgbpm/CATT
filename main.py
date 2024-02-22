@@ -11,9 +11,6 @@ import gzip
 import shutil
 
 # TODO:
-#  ** generate templated output for use by LLMs
-
-# TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
 #    (e.g. recent addition of oncology data)
 #    - does dictionary have all the columns, are dictionary columns all present in the file?
@@ -24,18 +21,22 @@ import shutil
 #       onehot, continuous, days, age, based on data types and frequency
 
 # TODO:
-#  ** investigate python template libraries for LLM text generation
-#  ** add option to create txt output file based on a single AlleleID or
-#       VariationID across files in a structured format appropriate for LLM
-
-# TODO:
-#  ** add a configuration for allowing n/a value choice, but also have a default
-#  ** probably add as a dictionary configuration?
-#  ** also add a general program flag for a default strategy?
-
-# TODO:
-#  ** add data value processing (age, days since, etc.)
+#  ** add date value processing (age, days since, etc.)
 #  ** include support for various data formats
+
+
+def apply_template(template, record):
+    if args.debug:
+        print("apply_template:", template, record)
+    # template is the string from the config.yml
+    # record is the record array for one line of the source
+    output = template
+    for key, value in record.items():
+        # substitute value for instances of {key} in template
+        param = '{' + key + '}'
+        output = output.replace(param, str(value))
+    return output
+
 
 def skip_array(skiptext):
     if type(skiptext) is str:
@@ -132,6 +133,8 @@ parser.add_argument('-i', '--info', action='store_true',  default=False,
                     help="Provide progress and other information.")
 
 # encoding options
+parser.add_argument('--template', action='store_true',
+                    help="Generate template output column '<source-name>-template' if specified in config.yml.")
 parser.add_argument('--onehot', action='store_true',
                     help="Generate one-hot encodings for columns that support it.")
 parser.add_argument('--categories', action='store_true',
@@ -259,7 +262,7 @@ if args.debug:
 
 # load all the config files into a source list dataframe
 sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
-                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file'])
+                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file', 'template'])
 
 for c in configList:
     path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
@@ -275,7 +278,8 @@ for c in configList:
                 config.get('name'), path, config.get('url'), config.get('download_file'),
                 config.get('file'), config.get('gzip'), config.get('header_row'),
                 config.get('skip_rows'), config.get('delimiter'), config.get('quoting'),
-                config.get('strip_hash'), config.get('md5_url'), config.get('md5_file')
+                config.get('strip_hash'), config.get('md5_url'), config.get('md5_file'),
+                config.get('template')
             ]
 
         except yaml.YAMLError as exc:
@@ -781,6 +785,15 @@ for index, sourcefile in sourcefiles.iterrows():
 
         # copy back to our data array
         data[sourcefile['name']] = df
+
+    if args.template and len(sourcefile['template']) > 0:
+        sourcefile_name = sourcefile['name']
+        template_column_name = "{}-template".format(sourcefile_name)
+        if args.debug:
+            print("Applying template to", sourcefile_name, "as", template_column_name)
+        df = data[sourcefile_name]
+        df[template_column_name] = df.apply(lambda x: apply_template(sourcefile['template'], x), axis=1)
+        data[sourcefile_name] = df
 
     if args.debug:
         print("Data:", data[sourcefile['name']])

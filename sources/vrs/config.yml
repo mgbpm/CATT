@@ -9,3 +9,6 @@
   strip_hash: 0
   md5_url:
   md5_file:
+  template: >
+    ClinVar VariationID {clinvar_variation_id} has the unique GA4GH Variation Representation Specification (VRS) identifier
+    {vrs_2_0_alpha_id}.

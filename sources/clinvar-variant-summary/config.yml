@@ -11,3 +11,9 @@
   strip_hash: 1
   md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz.md5
   md5_file: variant_summary.txt.gz.md5
+  template: >
+    ClinVar summarizes allele {AlleleID}, also known as {Name}, as a {Type} mutation on gene {GeneSymbol}, and it has
+    a ClinVar VariationID of {VariationID}. The ClinVar summary record indicates an association with {PhenotypeList} 
+    conditions with significance {ClinicalSignificance}. The mutation association was most recently evaluated on 
+    {LastEvaluated}. {NumberSubmitters} laboratories have submitted classifications for this variant, with an overall 
+    review status of {ReviewStatus}.

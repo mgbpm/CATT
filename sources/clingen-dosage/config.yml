@@ -9,3 +9,6 @@
   strip_hash: 0
   md5_url:
   md5_file:
+  template: >
+    ClinGen indicates a Dosage Sensitivity assertion for gene {GENE SYMBOL} as of {DATE}, with haploinsufficiency of
+    {HAPLOINSUFFICIENCY}, and triploinsufficiency of {TRIPLOSENSITIVITY}.

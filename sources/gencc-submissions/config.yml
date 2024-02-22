@@ -9,3 +9,6 @@
   strip_hash: 0
   md5_url:
   md5_file:
+  template: >
+    The GenCC submission from {submitter_title} for gene {gene_symbol} regarding association with disease {disease_title} with {moi_title} inheritance pattern has classfication {classification_title}.
+    The submission was made on {submitted_as_date} and references these PubMed articles: {submitted_as_pmids}.

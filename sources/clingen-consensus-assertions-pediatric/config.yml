@@ -9,3 +9,6 @@
   strip_hash: 1
   md5_url:
   md5_file:
+  template: >
+    Clingen's consensus pediatric actionability gene-disease assertions indicate pathogenic mutations in gene(s) {geneOrVariant} may be
+    associated with condition {disease} with {consensusAssertion} and status {status-overall} and assertion status {status-assertion}.
