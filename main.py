@@ -140,8 +140,8 @@ parser.add_argument('--expand', action='store_true',
                     help="Generate additional rows when specified columns have lists of values (i.e. list of genes).")
 parser.add_argument('--map', action='store_true',
                     help="Generate new columns based on mapping group configuration.")
-parser.add_argument('--na-value', action='store', dest='na_value', type=int, default=-1,
-                    help='A numeric value to use when a value is n/a. Defaults to -1. Also configurable per column.')
+parser.add_argument('--na-value', action='store', dest='na_value', type=int, default=None,
+                    help='A numeric value to use when a value is n/a. Defaults to None. Also configurable per column.')
 parser.add_argument('--days', action='store_true',
                     help="Generate output column transforming date column to days since 1 Jan 1970.")
 parser.add_argument('--age', action='store_true',
@@ -435,10 +435,10 @@ def generate_dictionary(srcfile):
     # newcol = column.strip(' #')
     # create dataframe with appropriate columns
     df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age', 'expand'])
+                                   'continuous', 'text', 'map', 'days', 'age', 'expand', 'na-value'])
     # create one row per column header
     defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
-                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE'}
+                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE', 'na-value': ''}
     for field in cols:
         df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
                                    defaults['category'], defaults['continuous'], defaults['text'], defaults['map'],
@@ -473,7 +473,7 @@ else:
 
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age', 'expand'])
+                                   'continuous', 'text', 'map', 'days', 'age', 'expand', 'na-value'])
 data = dict()
 global sourcecolumns, map_config_df
 
@@ -510,7 +510,7 @@ for index, sourcefile in sourcefiles.iterrows():
                                                sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
                                                r.get('comment'), r.get('join-group'), r.get('onehot'),
                                                r.get('category'), r.get('continuous'), r.get('text'), r.get('map'),
-                                               r.get('days'), r.get('age'), r.get('expand')]
+                                               r.get('days'), r.get('age'), r.get('expand'), r.get('na-value')]
 
     if args.debug:
         print("Dictionary processed")
@@ -758,6 +758,11 @@ for index, sourcefile in sourcefiles.iterrows():
 
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
 
+            # column-level NaN value replacement
+            if r['na-value'] is not None:
+                df[column_name].fillna(r['na-value'], inplace=True)
+
+            # Strategies: variable deletion, mean/median imputation, most common value, ???
             # continuous
             #  z-score?
             #   (https://www.analyticsvidhya.com/blog/2015/11/8-ways-deal-continuous-variables-predictive-modeling/)
@@ -770,12 +775,12 @@ for index, sourcefile in sourcefiles.iterrows():
 
             # scaling
 
-            # TODO: add a field level "missing" configuration to specify a strategy for handling missing sources
-            # N/A, null, Empty, ?, none, empty, -, NaN, etc.
-            # Strategies: variable deletion, mean/median imputation, most common value, ???
+        # if specified, fill any remaining N/A values that weren't filled in at the field level
+        if args.na_value is not None:
+            df.fillna(args.na_value, inplace=True)
 
-            # copy back to our data array
-            data[sourcefile['name']] = df
+        # copy back to our data array
+        data[sourcefile['name']] = df
 
     if args.debug:
         print("Data:", data[sourcefile['name']])
@@ -882,6 +887,10 @@ if args.join:
             if args.debug:
                 print("Now prior join df:")
                 print(already_joined_dic_df)
+
+        # fill in any Nan values after merging dataframes
+        if args.na_value is not None:
+            out_df.fillna(args.na_value, inplace=True)
 
         output_file = args.output
         if args.info:

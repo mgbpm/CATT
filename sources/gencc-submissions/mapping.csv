@@ -7,7 +7,7 @@ classification_curie,GENCC:100003,1737,class-curie-rank,0.75
 classification_curie,GENCC:100008,244,class-curie-rank,0.5
 classification_curie,GENCC:100005,172,class-curie-rank,0.1
 classification_curie,GENCC:100006,18,class-curie-rank,0.01
-classification_title,Supportive,5330,class-curie-rank,0.6
+classification_title,Supportive,5330,class-title-rank,0.6
 classification_title,Strong,4569,class-title-rank,0.9
 classification_title,Definitive,3378,class-title-rank,0.99
 classification_title,Limited,1921,class-title-rank,0.6
