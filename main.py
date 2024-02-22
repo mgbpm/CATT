@@ -111,7 +111,7 @@ join_precedence = ('variation-id', 'gene-symbol', 'hgnc-id')
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
-pd.options.mode.copy_on_write = True # will become default in Pandas 3
+pd.options.mode.copy_on_write = True  # will become default in Pandas 3
 
 
 #########################
@@ -262,7 +262,8 @@ if args.debug:
 
 # load all the config files into a source list dataframe
 sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
-                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file', 'template'])
+                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file',
+                                    'template'])
 
 for c in configList:
     path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
@@ -423,6 +424,7 @@ if args.download:
 # FIELD CONFIG DICTIONARY
 #
 #########################
+
 
 def generate_dictionary(srcfile):
     # TODO: analyze column data and set category, onehot, continuous, days, age, based on data types and frequency
@@ -871,7 +873,6 @@ if args.join:
                 for jg in join_groups:
                     if args.debug:
                         print("checking if previous merges have", jg)
-                    # if any(already_joined_dic_df['join-group'] == jg):
                     if (already_joined_dic_df['join-group'] == jg).any():
                         selected_join_group = jg
                         break
@@ -879,8 +880,8 @@ if args.join:
                     print("Didn't find a matching prior join-group for", s)
                     exit(-1)
                 # get the left and right join column names for selected join group
-                left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == selected_join_group)].iloc[
-                    0]
+                left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group']
+                                                          == selected_join_group)].iloc[0]
                 left_join_column = left_join_df['column']
                 if args.debug:
                     print("Left join column", left_join_column)
