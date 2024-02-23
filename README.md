@@ -145,6 +145,7 @@ GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FAL
 ```
 
 The `dictionary.csv` contains the following columns:
+
 | Column | Description |
 |--------|-------------|
 | column | The exact column header name from the file, stripped of hashes if configured to do so. |
@@ -153,12 +154,24 @@ The `dictionary.csv` contains the following columns:
 | onehot | With --onehot, generate new output columns for each value of the column, with values of 0 or 1 depending on if the row has the specific value. |
 | category | With --categories, generate a new column with values mapped to unique numbers. |
 | continuous | Placeholder for future feature. Currently not implemented or supported. |
-| text | Placeholder for future feature. Currently not implemented or supported. |
+| format | For date columns using days/age flag, this is the date format of the field (see common formats below). |
 | map | With --map, use `mapping.csv` to create new output columns based on values in the column. |
 | days | Not yet implemented. With --days, generate a new output column with the number of days since Jan 1 1970 to the date value. |
 | age | Not yet implemented. With --age, genarate a new output column with the number of days between today and the date value. |
 | expand | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value. |
 | na-value | A field level replacement for NaN / missing values, which are replace when using --na-value |
+
+Common date formats in source files for use in the `format` column include:
+
+| Date/time Value | Format |
+| --------------- | ------ |
+| Mon Nov 02 21:15:11 UTC 2020 | %a %b %d %H:%M%S %Z %Y |
+| 2016-06-08T14:14:30Z | %Y-%m-%dT%H:%M:%SZ |
+| 2018-06-07T16:00:00.000Z | %Y-%m-%dT%H:%M:%S.%fZ |
+| Wed, 01 Feb 2023 00:00:00 -0000 | %a, %d %b %Y %H:%M:%S %z |
+| Mar 23, 2023 | %b %d, %Y |
+| 2020-12-24 | %Y-%m-%d |
+| 2020-06-18 13:31:17 | %Y-%m-%d %H:%M:%S |
 
 ### mapping.csv
 Each source may optionally have `mapping.csv` file. If the `map` column is set to true in the dictionary for a specific
