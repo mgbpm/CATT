@@ -16,9 +16,12 @@ Tools for preparing ClinGen, ClinVar and GenCC datasets for use in machine learn
 ## Prerequisites
 
 Python 3 is required (tested with Python 3.9.18), as well as the following modules.
+
 ```
  python -m pip install pandas argparse sklearn.preprocessing pyyaml requests
 ```
+
+Please use Pandas 2.0.0 or greater.
 
 ## Usage
 
