@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+import pytz
 import pandas as pd
 import argparse
 from sklearn.preprocessing import LabelEncoder
@@ -20,14 +22,77 @@ import shutil
 #  ** when creating dictionary template: analyze column data and set category,
 #       onehot, continuous, days, age, based on data types and frequency
 
-# TODO:
-#  ** add date value processing (age, days since, etc.)
-#  ** include support for various data formats
+# Tue Mar 10 00:00:00 UTC 2015
+# Tue Mar 10 00:00:00 UTC 2015
+# Wed Aug 24 00:00:00 UTC 2022
+# Tue Mar 10 00:00:00 UTC 2015
+# Mon Nov 02 21:15:11 UTC 2020
+# %a %b %d %H:%M%S %Z %Y
+#
+# 2016-06-08T14:14:30Z
+# %Y-%m-%dT%H:%M:%SZ
+#
+# 2018-06-07T16:00:00.000Z
+# %Y-%m-%dT%H:%M:%S.%fZ
+#
+# Thu, 04 Apr 2019 16:27:31 -0000
+# Thu, 04 Apr 2019 16:27:31 -0000
+# Wed, 09 Feb 2022 13:14:39 -0000
+# Thu, 04 Apr 2019 16:27:31 -0000
+# Thu, 04 Apr 2019 00:00:00 -0000
+# Wed, 01 Feb 2023 16:54:54 -0000
+# Wed, 01 Feb 2023 00:00:00 -0000
+# %a, %d %b %Y %H:%M:%S %z
+#
+# Mar 29, 2022
+# Mar 23, 2023
+# %b %d, %Y
+#
+# 2020-12-24
+# %Y-%m-%d
+#
+# 2018-03-30 13:31:56
+# 2020-06-18 13:31:17
+# %Y-%m-%d %H:%M:%S
+#
+# datetime.strptime('31/01/22 23:59:59.999999',
+#                   '%d/%m/%y %H:%M:%S.%f')
+#
+# Either keep a list of tokens for approved formats, or use the format string as the configuration
+
+
+def str_to_datetime(date_str, date_format):
+    dt = datetime.strptime(date_str, date_format).replace(tzinfo = pytz.UTC)
+    return dt
+
+
+epoch: datetime = str_to_datetime('01/01/1970', '%m/%d/%Y').replace(tzinfo = pytz.UTC)
+today = datetime.now(timezone.utc)
+
+
+def date_to_days(dt):
+    return (dt-epoch).days
+
+
+def date_to_age(dt):
+    return (today-dt).days
+
+
+def get_days(date_str, date_format):
+    if date_str == "-":
+        return -1
+    dt = str_to_datetime(date_str, date_format)
+    return date_to_days(dt)
+
+
+def get_age(date_str, date_format):
+    if date_str == "-":
+        return -1
+    dt = str_to_datetime(date_str, date_format)
+    return date_to_age(dt)
 
 
 def apply_template(template, record):
-    if args.debug:
-        print("apply_template:", template, record)
     # template is the string from the config.yml
     # record is the record array for one line of the source
     output = template
@@ -104,6 +169,8 @@ one_hot_prefix = 'hot'
 categories_prefix = 'cat'
 ordinal_prefix = 'ord'
 rank_prefix = 'rnk'
+days_prefix = 'days'
+age_prefix = 'age'
 sources_path = './sources'
 
 # if multiple joins are possible, choose highest precedence join column
@@ -219,6 +286,7 @@ config_yml = """--- # Source file description
   strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
   md5_url: # Download url for md5 checksum file (optional)
   md5_file: # Name of md5 checksum file to download (optional)
+  template: # A text template which can generate a new output column. Template fields {column name} use dictionary names.
 """
 if args.generate_config:
     cnt = 0
@@ -441,13 +509,13 @@ def generate_dictionary(srcfile):
     # newcol = column.strip(' #')
     # create dataframe with appropriate columns
     df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age', 'expand', 'na-value'])
+                                   'continuous', 'format', 'map', 'days', 'age', 'expand', 'na-value'])
     # create one row per column header
     defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
-                'text': 'TRUE', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE', 'na-value': ''}
+                'format': '', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE', 'na-value': ''}
     for field in cols:
         df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
-                                   defaults['category'], defaults['continuous'], defaults['text'], defaults['map'],
+                                   defaults['category'], defaults['continuous'], defaults['format'], defaults['map'],
                                    defaults['days'], defaults['age'], defaults['expand']]
     # save dataframe as csv
     dictemplate = srcfile.get('path') + '/dictionary.csv'
@@ -479,7 +547,7 @@ else:
 
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'text', 'map', 'days', 'age', 'expand', 'na-value'])
+                                   'continuous', 'format', 'map', 'days', 'age', 'expand', 'na-value'])
 data = dict()
 global sourcecolumns, map_config_df
 
@@ -515,7 +583,7 @@ for index, sourcefile in sourcefiles.iterrows():
             dictionary.loc[len(dictionary)] = [sourcefile.get('name'),
                                                sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
                                                r.get('comment'), r.get('join-group'), r.get('onehot'),
-                                               r.get('category'), r.get('continuous'), r.get('text'), r.get('map'),
+                                               r.get('category'), r.get('continuous'), r.get('format'), r.get('map'),
                                                r.get('days'), r.get('age'), r.get('expand'), r.get('na-value')]
 
     if args.debug:
@@ -764,9 +832,21 @@ for index, sourcefile in sourcefiles.iterrows():
 
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
 
+            # date time encodings (age, days)
+            if not pd.isna(r['format']):
+                if args.debug:
+                    print("Age/Days: Column=", column_name, " format=", r['format'])
+                if args.age:
+                    age_column = age_prefix + '_' + column_name
+                    df[age_column] = df.apply(lambda x: get_age(x.get(column_name), r['format']), axis=1)
+                if args.days:
+                    days_column = days_prefix + '_' + column_name
+                    df[days_column] = df.apply(lambda x: get_days(x.get(column_name), r['format']), axis=1)
+
             # column-level NaN value replacement
             if r['na-value'] is not None:
                 df[column_name].fillna(r['na-value'], inplace=True)
+
 
             # Strategies: variable deletion, mean/median imputation, most common value, ???
             # continuous

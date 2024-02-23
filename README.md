@@ -30,10 +30,14 @@ Command line options include:
 |-------------------|------------------------------------------------------------------------------------------------------------------------|
 | --debug           | Provide detailed debugging information.                                                                                |
 | --info            | Provide high level progress information.                                                                               |
+| --template        | Generate new output column, one per row, based on template value in config.yml.                                        |
+| --days            | Generate new days_... column for dates as days since 1/1/1970.                                                         |
+| --age             | Generate new age_... column for dates as days since today.                                                             |
 | --onehot          | Generate output for columns configured to support one-hot encoding.                                                    |
 | --categories      | Generate output for columns configured to support categorical encoding.                                                |
 | --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.                      | 
 | --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv.          |
+| --na-value       | Set global replacement for NaN / missing values and trigger replacement including field level replacement.             |
 | --download        | Download source files when not present. Download source files when not present. Configured with config.yml.            |
 | --force           | Download source files even if already present.                                                                         |
 | --counts          | Generate value counts for the source files (helpful for determining mapping candidates).                               |
@@ -97,6 +101,11 @@ tab-delimited (`tab`).
   strip_hash: 1
   md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz.md5
   md5_file: submission_summary.txt.gz.md5
+  template: >
+    {Submitter} submitted their laboratory's assertion ClinVar VariationID of {VariationID} on gene 
+    {SubmittedGeneSymbol}. {Submitter} indicates an association with {SubmittedPhenotypeInfo} conditions with 
+    significance {ClinicalSignificance}. The laboratory most recently evaluated this variant on {DateLastEvaluated}
+    with a review status of {ReviewStatus}. That laboratory's basis for this interpretation: {Description}.
 ```
 | Setting       | Description                                                                                                                                |
 |---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
@@ -112,6 +121,7 @@ tab-delimited (`tab`).
 | strip_hash    | 0 or 1, to indicate whether to strip leading and trailing hash (#) characters from column headers. |
 | md5_url       | Optional. A web url suitable for downloading an md5 checksum file. |
 | md5_file      | Optional. The name of the downloaded md5 checksum file. |
+| template | Optional. A text template for use with --template in which text is processed per row and added as column |
 
 ### dictionary.csv
 Each source should also have a `dictionary.csv` file which provides meta-data about the columns in the source file.
@@ -125,13 +135,13 @@ categorical encoding (string values to numbers) and to mapping encoding which wi
 additional columns for the output based on each value.
 
 ```
-"column","comment",join-group,onehot,category,continuous,text,map,days,age,expand
-GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
-"HGNC ID","HGNC id for the specified gene in the form `HGNC:<hgnc gene id>`",hgnc-id,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
-"HAPLOINSUFFICIENCY","Interpretation category for haploinsufficiency and inheritance mode if applicable, for example 'Gene Associated with Autosomal Recessive Phenotype' or 'Little Evidence for Haploinsufficiency'.",,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE
-"TRIPLOSENSITIVITY","Interpretation category for triploinsufficiency and inheritance mode if applicable, for example 'Sufficient Evidence for Triplosensitivity', 'Dosage Sensitivity Unlikely' or 'Little Evidence for Triploinsufficiency'.",,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,FALSE,FALSE
-"ONLINE REPORT","A URL to the dosage sensitivity report at clinicalgenome.org.",,FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,FALSE
-"DATE","Date added or last updated.",,FALSE,FALSE,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE
+"column","comment",join-group,onehot,category,continuous,format,map,days,age,expand,na-value
+GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"HGNC ID","HGNC id for the specified gene in the form `HGNC:<hgnc gene id>`",hgnc-id,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"HAPLOINSUFFICIENCY","Interpretation category for haploinsufficiency and inheritance mode if applicable, for example 'Gene Associated with Autosomal Recessive Phenotype' or 'Little Evidence for Haploinsufficiency'.",,FALSE,TRUE,FALSE,,TRUE,FALSE,FALSE,FALSE,""
+"TRIPLOSENSITIVITY","Interpretation category for triploinsufficiency and inheritance mode if applicable, for example 'Sufficient Evidence for Triplosensitivity', 'Dosage Sensitivity Unlikely' or 'Little Evidence for Triploinsufficiency'.",,FALSE,TRUE,FALSE,,TRUE,FALSE,FALSE,FALSE,""
+"ONLINE REPORT","A URL to the dosage sensitivity report at clinicalgenome.org.",,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"DATE","Date added or last updated.",,FALSE,FALSE,FALSE,"%Y-%m-%dT%H:%M:%SZ",FALSE,TRUE,TRUE,FALSE,""
 ```
 
 The `dictionary.csv` contains the following columns:
@@ -148,6 +158,7 @@ The `dictionary.csv` contains the following columns:
 | days | Not yet implemented. With --days, generate a new output column with the number of days since Jan 1 1970 to the date value. |
 | age | Not yet implemented. With --age, genarate a new output column with the number of days between today and the date value. |
 | expand | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value. |
+| na-value | A field level replacement for NaN / missing values, which are replace when using --na-value |
 
 ### mapping.csv
 Each source may optionally have `mapping.csv` file. If the `map` column is set to true in the dictionary for a specific
@@ -214,6 +225,7 @@ This will create a `config.yml` in the ./new-source-file-name directory which wi
   strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
   md5_url: # Download url for md5 checksum file (optional)
   md5_file: # Name of md5 checksum file to download (optional)
+  template: # A text template which can generate a new output column. Template fields {column name} use dictionary names.
 ```
 
 Now set each of the values in the new `config.yml` to meet the requirements. Usually, you will need a `name`,
