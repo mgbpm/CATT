@@ -1,16 +1,17 @@
-from datetime import datetime, timezone
-import pytz
-import pandas as pd
 import argparse
-from sklearn.preprocessing import LabelEncoder
+import gzip
+import hashlib
 import os
-import yaml
+import shutil
+from datetime import datetime, timezone
 from os import access, R_OK
 from os.path import isfile
+
+import pandas as pd
+import pytz
 import requests
-import hashlib
-import gzip
-import shutil
+import yaml
+from sklearn.preprocessing import LabelEncoder
 
 # TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
@@ -824,8 +825,10 @@ for index, sourcefile in sourcefiles.iterrows():
                     df[days_column] = df.apply(lambda x: get_days(x.get(column_name), r['format']), axis=1)
 
             # column-level NaN value replacement
-            if r['na-value'] is not None:
-                df[column_name].fillna(r['na-value'], inplace=True)
+            if not pd.isna(r['na-value']) and r['na-value'] is not None:
+                if args.debug:
+                    print("Apply na-value", r['na-value'], "to", column_name)
+                df.fillna({column_name: r['na-value']}, inplace=True)
 
 
             # Strategies: variable deletion, mean/median imputation, most common value, ???
