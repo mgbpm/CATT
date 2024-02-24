@@ -1,16 +1,9 @@
 column,value,frequency,map-name,map-value
-consensusAssertion,Strong Actionability,69,consensus-assert-rank,1
-consensusAssertion,Moderate Actionability,62,consensus-assert-rank,.5
-consensusAssertion,Assertion Pending,57,consensus-assert-rank,0
-consensusAssertion,N/A - Insufficient evidence: early rule-out,43,consensus-assert-rank,-0.01
-consensusAssertion,Limited Actionability,36,consensus-assert-rank,0.1
-consensusAssertion,Definitive Actionability,11,consensus-assert-rank,0.9
-consensusAssertion,No Assertion: scoring group absence,6,consensus-assert-rank,0
-consensusAssertion,N/A - Insufficient evidence: expert review,3,consensus-assert-rank,-0.01
-status-assertion,Complete,189,status-assert-rank,1
-status-assertion,Incomplete,98,status-assert-rank,0
-status-overall,Released,283,status-overall-rank,1
-status-overall,Retracted,4,status-overall-rank,-1
-status-stg1,Complete,225,status-stg1-rank,1
-status-stg1,Failed,43,status-stg1-rank,-1
-status-stg1,Incomplete,19,status-stg1-rank,0
+consensusAssertion,Strong Actionability,69,consensus-assert-rank,0.9
+consensusAssertion,Moderate Actionability,62,consensus-assert-rank,0.75
+consensusAssertion,Assertion Pending,57,consensus-assert-rank,0.5
+consensusAssertion,N/A - Insufficient evidence: early rule-out,43,consensus-assert-rank,
+consensusAssertion,Limited Actionability,36,consensus-assert-rank,0.6
+consensusAssertion,Definitive Actionability,11,consensus-assert-rank,0.99
+consensusAssertion,No Assertion: scoring group absence,6,consensus-assert-rank,0.5
+consensusAssertion,N/A - Insufficient evidence: expert review,3,consensus-assert-rank,

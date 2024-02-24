@@ -1,13 +1,7 @@
 column,value,frequency,map-name,map-value
-consensusAssertion,Strong Actionability,117,consensus-assert-rank,1
-consensusAssertion,Moderate Actionability,61,consensus-assert-rank,.5
-consensusAssertion,N/A - Insufficient evidence: early rule-out,30,consensus-assert-rank,-0.01
-consensusAssertion,Assertion Pending,17,consensus-assert-rank,0
-consensusAssertion,Definitive Actionability,11,consensus-assert-rank,0.9
-consensusAssertion,Limited Actionability,8,consensus-assert-rank,0.5
-status-assertion,Complete,212,status-assert-rank,1
-status-assertion,Incomplete,32,status-assert-rank,0
-status-overall,Released,244,status-overall-rank,1
-status-stg1,Complete,213,status-stg1-rank,1
-status-stg1,Failed,30,status-stg1-rank,-1
-status-stg1,Incomplete,1,status-stg1-rank,0
+consensusAssertion,Strong Actionability,117,consensus-assert-rank,0.9
+consensusAssertion,Moderate Actionability,61,consensus-assert-rank,0.75
+consensusAssertion,N/A - Insufficient evidence: early rule-out,30,consensus-assert-rank,
+consensusAssertion,Assertion Pending,17,consensus-assert-rank,.5
+consensusAssertion,Definitive Actionability,11,consensus-assert-rank,0.99
+consensusAssertion,Limited Actionability,8,consensus-assert-rank,0.6
