@@ -4,6 +4,7 @@ import hashlib
 import os
 import shutil
 from datetime import datetime, timezone
+import dateparser
 from os import access, R_OK
 from os.path import isfile
 
@@ -128,11 +129,14 @@ if args.join and not args.sources:
 
 
 def str_to_datetime(date_str, date_format):
-    dt = datetime.strptime(date_str, date_format).replace(tzinfo = pytz.UTC)
-    return dt
+    # first try the configured format
+    try:
+        return datetime.strptime(str(date_str), date_format).replace(tzinfo=pytz.UTC)
+    # then try dateparser generic handling
+    except (ValueError, TypeError):
+        return dateparser.parse(str(date_str)).replace(tzinfo=pytz.UTC)
 
-
-epoch: datetime = str_to_datetime('01/01/1970', '%m/%d/%Y').replace(tzinfo = pytz.UTC)
+epoch: datetime = str_to_datetime('01/01/1970', '%m/%d/%Y').replace(tzinfo=pytz.UTC)
 today = datetime.now(timezone.utc)
 
 
@@ -145,14 +149,14 @@ def date_to_age(dt):
 
 
 def get_days(date_str, date_format):
-    if date_str == "-":
+    if date_str == "-" or date_str == "NA":
         return -1
     dt = str_to_datetime(date_str, date_format)
     return date_to_days(dt)
 
 
 def get_age(date_str, date_format):
-    if date_str == "-":
+    if date_str == "-" or date_str == "NA":
         return -1
     dt = str_to_datetime(date_str, date_format)
     return date_to_age(dt)
@@ -164,7 +168,7 @@ def apply_template(template, record):
     output = template
     for key, value in record.items():
         # substitute value for instances of {key} in template
-        param = '{' + key + '}'
+        param = '{' + str(key) + '}'
         output = output.replace(param, str(value))
     return output
 
@@ -247,8 +251,6 @@ pd.set_option('display.max_columns', 1000)
 pd.options.mode.copy_on_write = True  # will become default in Pandas 3
 
 
-
-
 ###############################
 #
 # GENERATE CONFIGURATION YML
@@ -267,7 +269,7 @@ config_yml = """--- # Source file description
   strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
   md5_url: # Download url for md5 checksum file (optional)
   md5_file: # Name of md5 checksum file to download (optional)
-  template: # A text template which can generate a new output column. Template fields {column name} use dictionary names.
+  template: # Text template which can generate a new output column. Template fields {column name} use dictionary names.
 """
 if args.generate_config:
     cnt = 0
@@ -480,13 +482,13 @@ def generate_dictionary(srcfile):
     print("Creating dictionary template")
     data_file = srcfile.get('path') + '/' + srcfile.get('file')
     separator_type = get_separator(srcfile.get('delimiter'))
-    df_data = pd.read_csv(data_file,
-                          header=srcfile.get('header_row'), sep=separator_type,
-                          skiprows=srcfile.get('skip_rows'), engine='python',
-                          quoting=srcfile.get('quoting'),
-                          nrows=0,
-                          on_bad_lines='warn')
-    cols = df_data.columns.tolist()
+    df_data_loc = pd.read_csv(data_file,
+                              header=srcfile.get('header_row'), sep=separator_type,
+                              skiprows=skip_array(srcfile.get('skip_rows')), engine='python',
+                              quoting=srcfile.get('quoting'),
+                              nrows=0,
+                              on_bad_lines='warn')
+    cols = df_data_loc.columns.tolist()
     # newcol = column.strip(' #')
     # create dataframe with appropriate columns
     df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
@@ -586,12 +588,6 @@ for index, sourcefile in sourcefiles.iterrows():
         if args.debug:
             print("File header contains columns:", df_tmp.columns)
         data.update({sourcefile['name']: df_tmp})
-        # data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-        #                                              header=sourcefile.get('header_row'), sep=separator,
-        #                                              skiprows=sourcefile.get('skip_rows'), engine='python',
-        #                                              quoting=sourcefile.get('quoting'),
-        #                                              nrows=100,
-        #                                              on_bad_lines='warn')})
         sourcecolumns = list(set(dic['column']))
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
@@ -599,7 +595,7 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      #  usecols=sourcecolumns,
                                                      usecols=lambda x: x.strip(' #') in sourcecolumns,
                                                      header=sourcefile.get('header_row'), sep=separator,
-                                                     skiprows=sourcefile.get('skip_rows'), engine='python',
+                                                     skiprows=skip_array(sourcefile.get('skip_rows')), engine='python',
                                                      quoting=sourcefile.get('quoting'),
                                                      # nrows=100,
                                                      on_bad_lines='warn')})
@@ -829,7 +825,6 @@ for index, sourcefile in sourcefiles.iterrows():
                 if args.debug:
                     print("Apply na-value", r['na-value'], "to", column_name)
                 df.fillna({column_name: r['na-value']}, inplace=True)
-
 
             # Strategies: variable deletion, mean/median imputation, most common value, ???
             # continuous

@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 ```
 or
 ```
- python -m pip install pandas argparse sklearn.preprocessing pyyaml requests
+ python -m pip install pandas argparse sklearn.preprocessing pyyaml requests dateparser
 ```
 
 Please use Pandas 2.0.0 or greater.
