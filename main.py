@@ -136,6 +136,7 @@ def str_to_datetime(date_str, date_format):
     except (ValueError, TypeError):
         return dateparser.parse(str(date_str)).replace(tzinfo=pytz.UTC)
 
+
 epoch: datetime = str_to_datetime('01/01/1970', '%m/%d/%Y').replace(tzinfo=pytz.UTC)
 today = datetime.now(timezone.utc)
 
@@ -931,9 +932,10 @@ if args.join:
                 for jg in join_groups:
                     if args.debug:
                         print("checking if previous merges have", jg)
-                    if (already_joined_dic_df['join-group'] == jg).any():
-                        selected_join_group = jg
-                        break
+                    if len(already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == jg)]) == 0:
+                        continue
+                    selected_join_group = jg
+                    break
                 if selected_join_group is None:
                     print("Didn't find a matching prior join-group for", s)
                     exit(-1)

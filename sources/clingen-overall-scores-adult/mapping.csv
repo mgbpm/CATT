@@ -4,7 +4,7 @@ severity,"1.0",27.0,severity-rank,1
 severity,"3.0",20.0,severity-rank,3
 likelihood,3C,81.0,likelihood-disease,0.7
 likelihood,2C,57.0,likelihood-disease,0.23
-likelihood,0D,24.0,likelihood-disease,0.01
+likelihood,0D,24.0,likelihood-disease,0.005
 likelihood,3A,14.0,likelihood-disease,0.7
 likelihood,2A,9.0,likelihood-disease,0.23
 likelihood,3N,8.0,likelihood-disease,0.7
@@ -15,7 +15,7 @@ likelihood,1C,3.0,likelihood-disease,0.025
 likelihood,3D,3.0,likelihood-disease,0.7
 likelihood,1A,2.0,likelihood-disease,0.025
 likelihood,3B,2.0,likelihood-disease,0.7
-likelihood,0A,1.0,likelihood-disease,0.01
+likelihood,0A,1.0,likelihood-disease,0.005
 likelihood,3C,81.0,likelihood-evidence-level,2
 likelihood,2C,57.0,likelihood-evidence-level,2
 likelihood,0D,24.0,likelihood-evidence-level,1

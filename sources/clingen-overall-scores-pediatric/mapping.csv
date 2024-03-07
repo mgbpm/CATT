@@ -6,13 +6,13 @@ likelihood,3C,67.0,likelihood-disease,0.7
 likelihood,2C,34.0,likelihood-disease,0.23
 likelihood,3N,11.0,likelihood-disease,0.7
 likelihood,3A,8.0,likelihood-disease,0.7
-likelihood,0D,6.0,likelihood-disease,0.01
+likelihood,0D,6.0,likelihood-disease,0.005
 likelihood,2N,4.0,likelihood-disease,0.23
 likelihood,3D,3.0,likelihood-disease,0.7
 likelihood,1C,3.0,likelihood-disease,0.025
 likelihood,2A,3.0,likelihood-disease,0.23
 likelihood,2B,2.0,likelihood-disease,0.23
-likelihood,0C,2.0,likelihood-disease,0.01
+likelihood,0C,2.0,likelihood-disease,0.005
 likelihood,2D,1.0,likelihood-disease,0.23
 likelihood,3C,67.0,likelihood-evidence-level,2
 likelihood,2C,34.0,likelihood-evidence-level,2
