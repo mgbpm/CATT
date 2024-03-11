@@ -44,8 +44,7 @@ Command line options include:
 
 | Option            | Description                                                                                                            |
 |-------------------|------------------------------------------------------------------------------------------------------------------------|
-| --debug           | Provide detailed debugging information.                                                                                |
-| --info            | Provide high level progress information.                                                                               |
+| --loglevel        | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).                                                             |
 | --template        | Generate new output column, one per row, based on template value in config.yml.                                        |
 | --days            | Generate new days_... column for dates as days since 1/1/1970.                                                         |
 | --age             | Generate new age_... column for dates as days since today.                                                             |
@@ -70,18 +69,18 @@ Command line options include:
 
 Force downloads of all sources.
 ```
-python main.py --download --force --info
+python main.py --download --force --loglevel=info
 ```
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
 ``` 
-python main.py --info --map --categories --expand --onehot --gene="MYH7" --join --sources="vrs,clinvar-variant-summary,gencc-submissions,clingen-overall-scores-adult"
+python main.py --loglevel=info --map --categories --expand --onehot --gene="MYH7" --join --sources="vrs,clinvar-variant-summary,gencc-submissions,clingen-overall-scores-adult"
 ```
 
 Generate an individual output file for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
 and producing onehot and categorical encodings.
 ```
-python main.py --debug --expand --onehot -cateogries --individual --sources="clingen-overall-scores-pediatric,vrs"
+python main.py --loglevel=debug --expand --onehot -cateogries --individual --sources="clingen-overall-scores-pediatric,vrs"
 ```
 
 ## Source Configuration
@@ -177,7 +176,8 @@ The `dictionary.csv` contains the following columns:
 | expand     | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value.                                         |
 | na-value   | A field level replacement for NaN / missing values, which are replace when using --na-value                                                                                                        |
 
-Common date formats in source files for use in the `format` column include:
+Common date formats in source files for use in the `format` column include the following. If a date does not match the
+pattern, the program will attempt to determine using a fallback approach.
 
 | Date/time Value                 | Format                   |
 |---------------------------------|--------------------------|

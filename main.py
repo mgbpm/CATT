@@ -16,7 +16,6 @@ from sklearn.preprocessing import LabelEncoder
 import logging
 
 # TODO:
-# ** use "logging" library instead of "print", can then use logging.info, etc. instead of "if" clauses
 # ** divide major areas into functions and perhaps files for code clarity and maintainability
 # ** do I need to use globals? try to eliminate
 # ** add .gitignore from the other Jiyeon project as suggested
