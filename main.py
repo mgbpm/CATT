@@ -18,7 +18,6 @@ import logging
 # TODO:
 # ** divide major areas into functions and perhaps files for code clarity and maintainability
 # ** do I need to use globals? try to eliminate
-# ** add .gitignore from the other Jiyeon project as suggested
 # ** add to README to use virtual env
 # ** fix error when downloading files that have no url configured (suggest manual download?)
 # ** os.path.join() for cross platform compatibility
@@ -153,6 +152,27 @@ logging.basicConfig(filename='python.log', encoding='utf-8', level=numeric_level
 # Helper functions
 #
 ####################
+
+def debug(*arguments, logtype='debug', sep=' '):
+    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+
+
+def info(*arguments, logtype='info', sep=' '):
+    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+
+
+def warning(*arguments, logtype='warning', sep=' '):
+    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+
+
+def error(*arguments, logtype='error', sep=' '):
+    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+
+
+def critical(*arguments, logtype='critical', sep=' '):
+    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+
+
 def str_to_datetime(date_str, date_format):
     # first try the configured format
     try:
@@ -217,10 +237,10 @@ def get_separator(delim):
 
 
 def download(downloadurl, filepath):
-    logging.debug("Downoading", downloadurl, "as", filepath)
+    debug("Downoading", downloadurl, "as", filepath)
     req = requests.get(downloadurl)
     open(filepath, 'wb').write(req.content)
-    logging.info("Completed download of", filepath)
+    info("Completed download of", filepath)
     return req
 
 
@@ -229,17 +249,17 @@ def get_md5(filename_with_path):
     with open(filename_with_path, "rb") as fp:
         while chunk := fp.read(8192):
             file_hash.update(chunk)
-        logging.debug(file_hash.digest())
-        logging.debug(file_hash.hexdigest())  # to get a printable str instead of bytes
+        debug(file_hash.digest())
+        debug(file_hash.hexdigest())  # to get a printable str instead of bytes
     return file_hash.hexdigest()
 
 
 def gunzip_file(fromfilepath, tofilepath):
-    logging.debug("Ungzipping", fromfilepath, "to", tofilepath)
+    debug("Ungzipping", fromfilepath, "to", tofilepath)
     with gzip.open(fromfilepath, 'rb') as f_in:
         with open(tofilepath, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    logging.info("Completed gunzip", tofilepath)
+    info("Completed gunzip", tofilepath)
 
 
 def get_join_precedence(join_group):
@@ -298,17 +318,17 @@ if args.generate_config:
         for d in dirs:
             yml = '{}/{}/{}'.format(sources_path, d, 'config.yml')
             if isfile(yml) and access(yml, R_OK):
-                logging.debug("Found existing config.yml", yml)
+                debug("Found existing config.yml", yml)
             else:
                 cnt = cnt + 1
-                logging.debug("Need to create", yml)
+                debug("Need to create", yml)
                 with open(yml, 'w') as file:
                     file.write(config_yml)
     if args.info:
         if cnt == 0:
-            logging.info("All data sources have a config.yml")
+            info("All data sources have a config.yml")
         else:
-            logging.info("Created", cnt, "config.yml files.")
+            info("Created", cnt, "config.yml files.")
 
 #########################
 #
@@ -323,10 +343,10 @@ for root, dirs, files in os.walk(sources_path):
         if f == 'config.yml':
             file = '{}/{}/{}'.format(sources_path, os.path.basename(root), f)
             configList += [file]
-            logging.debug(file)
+            debug(file)
 
-logging.debug("config file list:")
-logging.debug(configList)
+debug("config file list:")
+debug(configList)
 
 # load all the config files into a source list dataframe
 sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
@@ -334,12 +354,14 @@ sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'fil
                                     'template'])
 
 for c in configList:
+    debug("for c in configList: c=", str(c))
     path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
+    debug("for c in configList: path=", path)
     with open(c, "r") as stream:
         try:
             config = yaml.safe_load(stream)[0]
-            logging.debug("config:", c)
-            logging.debug(config)
+            debug("config:", str(c))
+            debug(config)
             # add to config dataframe
             sourcefiles.loc[len(sourcefiles)] = [
                 config.get('name'), path, config.get('url'), config.get('download_file'),
@@ -350,7 +372,7 @@ for c in configList:
             ]
 
         except yaml.YAMLError as exc:
-            logging.critical(exc)
+            critical(exc)
             exit(-1)
 
 # annotate source list with helper columns
@@ -359,7 +381,7 @@ sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
 
 sourcefiles.set_index('name')
 
-logging.debug(sourcefiles)
+debug(sourcefiles)
 
 
 #########################
@@ -377,16 +399,16 @@ else:
 # any invalid sources?
 invsources = set(sources).difference(sourcefiles['name'])
 if len(invsources) > 0:
-    logging.error("Invalid source file specficied in --sources parameter: ", invsources)
+    error("Invalid source file specficied in --sources parameter: ", invsources)
     exit(-1)
 
-logging.debug("Using source files: ", sources)
+debug("Using source files: ", sources)
 
 # restrict source list by command line option, if any
 if args.sources:
     sourcefiles = sourcefiles.loc[sourcefiles['name'].isin(sources)]
 
-logging.debug("Source configurations: ", sourcefiles)
+debug("Source configurations: ", sourcefiles)
 
 
 #########################
@@ -403,7 +425,7 @@ for i, s in sourcefiles.iterrows():
     download_file_path = ''
     if download_file:
         download_file_path = source_path + '/' + download_file
-        logging.debug("download_file specified for ", name, "as", download_file)
+        debug("download_file specified for ", name, "as", download_file)
     md5_file = s.get('md5_file')
     md5_file_path = ''
     if md5_file:
@@ -412,7 +434,7 @@ for i, s in sourcefiles.iterrows():
     datafile_path = ''
     if datafile:
         datafile_path = source_path + '/' + datafile
-        logging.debug("datafile specified for ", name, "as", datafile_path)
+        debug("datafile specified for ", name, "as", datafile_path)
     # see if the file is present
     need_download = False
     if len(datafile_path) > 0:
@@ -420,15 +442,15 @@ for i, s in sourcefiles.iterrows():
             need_download = True
         else:
             if isfile(datafile_path) and access(datafile_path, R_OK):
-                logging.debug("Found existing readable file", datafile_path)
+                debug("Found existing readable file", datafile_path)
             else:
                 if args.download:
                     need_download = True
                 else:
-                    logging.critical("ERROR: missing source file", datafile_path, "; specify --download to acquire.")
+                    critical("ERROR: missing source file", datafile_path, "; specify --download to acquire.")
                     exit(-1)
     else:
-        logging.critical("No datafile specified for", name, "!")
+        critical("No datafile specified for", name, "!")
         exit(-1)
     if need_download:
         if args.download:
@@ -447,35 +469,35 @@ for i, s in sourcefiles.iterrows():
                     downloaded_file_path = datafile_path
                 if md5_url:  # if we are doing md5 check then get the hash for the downloaded file
                     md5_hash_downloaded = get_md5(downloaded_file_path)
-                logging.info("Completed data file download;", downloaded_file_path)
+                info("Completed data file download;", downloaded_file_path)
             else:
-                logging.warning("WARNING: no url for", datafile, "for", s.get('name'))
+                warning("WARNING: no url for", datafile, "for", s.get('name'))
             if md5_url:
                 if md5_file:
                     r = download(md5_url, md5_file_path)
                     md5_hash_approved = r.text.split(' ')
                     if md5_hash_downloaded in md5_hash_approved:
-                        logging.info("MD5 check successful")
+                        info("MD5 check successful")
                     else:
-                        logging.error("ERROR: MD5 check failed")
-                        logging.error("Approved:", md5_hash_approved)
-                        logging.error("Downloaded:", md5_hash_downloaded)
+                        error("ERROR: MD5 check failed")
+                        error("Approved:", md5_hash_approved)
+                        error("Downloaded:", md5_hash_downloaded)
                         exit(-1)
                 else:
-                    logging.warning("WARNING: md5_url specified but not md5_file. Not performing checksum.")
+                    warning("WARNING: md5_url specified but not md5_file. Not performing checksum.")
             gzip_flag = s.get('gzip')
             if gzip_flag:
                 if datafile != download_file:  # for gzip datafile and download file should be different
                     gunzip_file(downloaded_file_path, datafile_path)
                 else:
-                    logging.error("gzip option requires diffirng data/download file names for", name)
+                    error("gzip option requires diffirng data/download file names for", name)
             # else:  if there's a future case where we need to change the name of a non-gzip downloaded file afterward
 
     else:
-        logging.debug("Data file", datafile, "already present.")
+        debug("Data file", datafile, "already present.")
 
 if args.download:
-    logging.info("Downloading complete;", download_count, "files.")
+    info("Downloading complete;", download_count, "files.")
     exit(0)
 
 #########################
@@ -511,7 +533,7 @@ def generate_dictionary(srcfile):
     # save dataframe as csv
     dictemplate = srcfile.get('path') + '/dictionary.csv'
     df_dic.to_csv(dictemplate, index=False)
-    logging.info("Created dictionary template", dictemplate)
+    info("Created dictionary template", dictemplate)
     return ''
 
 
@@ -520,20 +542,20 @@ missing_dictionary = 0
 for index, sourcefile in sourcefiles.iterrows():
     dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
-        logging.debug("Found dictionary file", dictionary_file)
+        debug("Found dictionary file", dictionary_file)
     else:
-        logging.warning("WARNING: Missing dictionary file", dictionary_file)
+        warning("WARNING: Missing dictionary file", dictionary_file)
         missing_dictionary = missing_dictionary + 1
         if args.generate_config:
             generate_dictionary(sourcefile)
 
 if missing_dictionary:
     if not args.generate_config:
-        logging.critical(missing_dictionary, "missing dictionaries.",
-                         "Use --generate-config to create template configurations.")
+        critical(missing_dictionary, "missing dictionaries.",
+                 "Use --generate-config to create template configurations.")
         exit(-1)
 else:
-    logging.debug("Verified all dictionaries exist.")
+    debug("Verified all dictionaries exist.")
 
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
@@ -544,22 +566,22 @@ global sourcecolumns, map_config_df
 #  process each source file and dictionary
 for index, sourcefile in sourcefiles.iterrows():
 
-    logging.debug(sourcefile.get('path'), sourcefile.get('file'),
-                  sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
+    debug(sourcefile.get('path'), sourcefile.get('file'),
+          sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
 
     separator = get_separator(sourcefile.get('delimiter'))
 
     # read source dictionary
-    logging.debug("Reading dictionary")
-    logging.debug("sourcefile =", sourcefile)
+    debug("Reading dictionary")
+    debug("sourcefile =", sourcefile)
 
     dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
 
-    logging.info("Read dictionary", dictionary_file)
+    info("Read dictionary", dictionary_file)
 
     dic = pd.read_csv(dictionary_file)
 
-    logging.debug(dic)
+    debug(dic)
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
@@ -570,10 +592,10 @@ for index, sourcefile in sourcefiles.iterrows():
                                                r.get('category'), r.get('continuous'), r.get('format'), r.get('map'),
                                                r.get('days'), r.get('age'), r.get('expand'), r.get('na-value')]
 
-    logging.debug("Dictionary processed")
+    debug("Dictionary processed")
 
     # read source sources
-    logging.info("Reading source for", sourcefile.get('name'), "...")
+    info("Reading source for", sourcefile.get('name'), "...")
 
     sourcefile_file = sourcefile.get('path') + '/' + sourcefile.get('file')
 
@@ -584,7 +606,7 @@ for index, sourcefile in sourcefiles.iterrows():
                              quoting=sourcefile.get('quoting'),
                              # nrows=100,
                              on_bad_lines='warn')
-        logging.debug("File header contains columns:", df_tmp.columns)
+        debug("File header contains columns:", df_tmp.columns)
         data.update({sourcefile['name']: df_tmp})
         sourcecolumns = list(set(dic['column']))
     else:
@@ -598,33 +620,33 @@ for index, sourcefile in sourcefiles.iterrows():
                                                      # nrows=100,
                                                      on_bad_lines='warn')})
     if sourcefile['strip_hash'] == 1:
-        logging.debug("Strip hashes and spaces from column labels")
+        debug("Strip hashes and spaces from column labels")
         df = data[sourcefile.get('name')]
         # rename columns
         for column in df:
             newcol = column.strip(' #')
             if newcol != column:
-                logging.debug("Stripping", column, "to", newcol)
+                debug("Stripping", column, "to", newcol)
                 data[sourcefile['name']] = df.rename({column: newcol}, axis='columns')
             else:
-                logging.debug("Not stripping colum", column)
-        logging.debug(data[sourcefile['name']])
+                debug("Not stripping colum", column)
+        debug(data[sourcefile['name']])
     else:
-        logging.debug("Not stripping column labels")
+        debug("Not stripping column labels")
 
     if args.expand:
-        logging.debug("name:", sourcefile['name'])
-        logging.debug("dictionary:")
-        logging.debug(dic)
+        debug("name:", sourcefile['name'])
+        debug("dictionary:")
+        debug(dic)
         dic_filter_df = dic.loc[(dic.get('expand') == True)]
         if len(dic_filter_df) > 0:
 
             sourcename = sourcefile.get('name')
             df = data[sourcefile.get('name')]
-            logging.debug("expand columns for", sourcename, "length", len(df))
+            debug("expand columns for", sourcename, "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
-                logging.debug("expanding column", col_name)
+                debug("expanding column", col_name)
                 expandable_rows_df = df[df[col_name].str.contains(",")]
                 # for each row, create a copy with each value
                 for exp_i, exp_r in expandable_rows_df.iterrows():
@@ -633,38 +655,38 @@ for index, sourcefile in sourcefiles.iterrows():
                         new_row = expandable_rows_df.loc[exp_i].copy()
                         new_row[col_name] = v
                         df.loc[len(df)] = new_row
-            logging.debug("new length", len(df))
+            debug("new length", len(df))
             data[sourcename] = df
 
     # is there an optimal spot to filter for gene and variant?
     if args.gene:
-        logging.debug("filter genes", args.gene)
+        debug("filter genes", args.gene)
         dic_filter_df = dic.loc[(dic['join-group'] == 'gene-symbol')]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
-            logging.debug("filter columns with gene-symbol join group and value", args.gene,
-                          "for", sourcefile['name'], "length", len(df))
+            debug("filter columns with gene-symbol join group and value", args.gene,
+                  "for", sourcefile['name'], "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
                 genes = args.gene.split(',')
-                logging.debug("filtering column", col_name, " in ", genes)
+                debug("filtering column", col_name, " in ", genes)
                 df = df.loc[(df[col_name].isin(genes))]
-            logging.debug("new length", len(df))
+            debug("new length", len(df))
             data[sourcefile['name']] = df
 
     if args.variant:
-        logging.debug("filter variant", args.variant)
+        debug("filter variant", args.variant)
         dic_filter_df = dic.loc[(dic['join-group'] == 'variation-id')]
         if len(dic_filter_df) > 0:
             df = data[sourcefile['name']]
-            logging.debug("filter columns with variation-id join group and value", args.variant,
-                          "for", sourcefile['name'], "length", len(df))
+            debug("filter columns with variation-id join group and value", args.variant,
+                  "for", sourcefile['name'], "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
                 variants = map(int, args.variant.split(','))
-                logging.debug("filtering column", col_name, " = ", args.variant, variants)
+                debug("filtering column", col_name, " = ", args.variant, variants)
                 df = df.loc[df[col_name].isin(variants)]
-            logging.debug("new length", len(df))
+            debug("new length", len(df))
             data[sourcefile['name']] = df
 
     # show count of unique values per column
@@ -681,7 +703,7 @@ for index, sourcefile in sourcefiles.iterrows():
         map_config_df = pd.read_csv(mapping_file)
         map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
-        logging.debug("Mapping Config:", map_config_df)
+        debug("Mapping Config:", map_config_df)
 
     # for rank and group mapping columns, show the counts of each value
     if args.counts:
@@ -698,14 +720,14 @@ for index, sourcefile in sourcefiles.iterrows():
                 print()
                 print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
                 value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
-                logging.debug(df)
-                logging.debug(value_counts_df)
+                debug(df)
+                debug(value_counts_df)
                 if args.counts:
                     print(value_counts_df)
 
                 if args.generate_config:
                     # add to the map configs dataframe
-                    logging.debug("generate configs for mapping/ranking for", r['column'])
+                    debug("generate configs for mapping/ranking for", r['column'])
                     for ind, row in value_counts_df.iterrows():
                         map_config_df.loc[len(map_config_df)] = [r['column'], row['value'], row['count'], '', '']
         if args.generate_config:
@@ -716,7 +738,7 @@ for index, sourcefile in sourcefiles.iterrows():
     if args.onehot or args.categories or args.map:  # or args.continuous or args.scaling
 
         df = data[sourcefile['name']]
-        logging.debug("Processing onehot, mapping, etc. for", sourcefile['name'], "df=", df)
+        debug("Processing onehot, mapping, etc. for", sourcefile['name'], "df=", df)
 
         # loop through each column and process any configured options
         # for i, r in dictionary.iterrows():
@@ -734,8 +756,8 @@ for index, sourcefile in sourcefiles.iterrows():
                 map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
                 map_col_df.rename(columns={'value': column_name}, inplace=True)
 
-                logging.debug("Map config for column:", column_name)
-                logging.debug(map_col_df)
+                debug("Map config for column:", column_name)
+                debug(map_col_df)
 
                 # get list of unique 'map-name' values
                 map_names = map_col_df['map-name'].unique()
@@ -770,7 +792,7 @@ for index, sourcefile in sourcefiles.iterrows():
             # onehot encoding
             #
             if args.onehot and r['onehot'] is True:
-                logging.debug("One-hot encoding", column_name, "as", one_hot_prefix+column_name)
+                debug("One-hot encoding", column_name, "as", one_hot_prefix+column_name)
                 oh_prefix = column_name + '_' + one_hot_prefix + '_'
                 one_hot_encoded = pd.get_dummies(df[column_name], prefix=oh_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
@@ -781,15 +803,15 @@ for index, sourcefile in sourcefiles.iterrows():
             if args.categories and r['category'] is True:
                 encoder = LabelEncoder()
                 encoded_column_name = categories_prefix + '_' + column_name
-                logging.debug("Category encoding", column_name, "as", encoded_column_name)
-                logging.debug("Existing values to be encoded:", df)
+                debug("Category encoding", column_name, "as", encoded_column_name)
+                debug("Existing values to be encoded:", df)
                 df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
                 # TODO: do we then normalize or scale the values afterwards, is that a separate option?
 
             # date time encodings (age, days)
             if not pd.isna(r['format']):
-                logging.debug("Age/Days: Column=", column_name, " format=", r['format'])
+                debug("Age/Days: Column=", column_name, " format=", r['format'])
                 if args.age:
                     age_column = age_prefix + '_' + column_name
                     df[age_column] = df.apply(lambda x: get_age(x.get(column_name), r['format']), axis=1)
@@ -799,7 +821,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
             # column-level NaN value replacement
             if not pd.isna(r['na-value']) and r['na-value'] is not None:
-                logging.debug("Apply na-value", r['na-value'], "to", column_name)
+                debug("Apply na-value", r['na-value'], "to", column_name)
                 df.fillna({column_name: r['na-value']}, inplace=True)
 
             # Strategies: variable deletion, mean/median imputation, most common value, ???
@@ -825,16 +847,16 @@ for index, sourcefile in sourcefiles.iterrows():
     if args.template and len(sourcefile['template']) > 0:
         sourcefile_name = sourcefile['name']
         template_column_name = "{}-template".format(sourcefile_name)
-        logging.debug("Applying template to", sourcefile_name, "as", template_column_name)
+        debug("Applying template to", sourcefile_name, "as", template_column_name)
         df = data[sourcefile_name]
         df[template_column_name] = df.apply(lambda x: apply_template(sourcefile['template'], x), axis=1)
         data[sourcefile_name] = df
 
-    logging.debug("Data:", data[sourcefile['name']])
+    debug("Data:", data[sourcefile['name']])
 
 # show the dictionary
-logging.debug("Columns:", args.columns)
-logging.debug("Dictionary:", dictionary)
+debug("Columns:", args.columns)
+debug("Dictionary:", dictionary)
 
 
 #########################
@@ -845,19 +867,19 @@ logging.debug("Dictionary:", dictionary)
 
 # create per-source output files to debugging purposes
 if args.individual:
-    logging.debug("sources.keys:", data.keys())
-    logging.debug("sourcefiles:", sourcefiles)
+    debug("sources.keys:", data.keys())
+    debug("sourcefiles:", sourcefiles)
 
     # summarize our sources
     for d in data.keys():
-        logging.debug("columns for ", d, ":")
-        logging.debug(data[d].columns.values.tolist())
+        debug("columns for ", d, ":")
+        debug(data[d].columns.values.tolist())
 
         # files put in current directory, prepend source name to file
         output_file = d + '-' + args.output
-        logging.debug("Generating intermediate source output", output_file)
+        debug("Generating intermediate source output", output_file)
         out_df = data[d]
-        logging.debug("out_df:", out_df)
+        debug("out_df:", out_df)
         out_df.to_csv(output_file, index=False)
 
 
@@ -872,7 +894,7 @@ if args.individual:
 if args.join:
     if args.sources:
         # merge by order of sources specified on command line using left joins in sequence
-        logging.info("Merging data sources:", args.sources)
+        info("Merging data sources:", args.sources)
         sources_sort = list(args.sources)
 
         dic_df = dictionary[dictionary['join-group'].notnull()]
@@ -881,7 +903,7 @@ if args.join:
         already_joined_dic_df = pd.DataFrame(data=None, columns=dictionary.columns)
         c = 0
         for s in sources_sort:
-            logging.info("Merging", s)
+            info("Merging", s)
             # get join columns for s
             s_dic_df = dic_df.loc[(dic_df['name'] == s)].sort_values(by=['precedence'])
             # s_join_columns = filter dictionary by s and join-group not null
@@ -890,48 +912,48 @@ if args.join:
             else:
                 # pick a join group that has already in a merged dataset, starting with the highest precedence
                 join_groups = s_dic_df['join-group'].unique()
-                logging.debug("joins for", s, "include", join_groups)
-                logging.debug("prior join groups:", already_joined_dic_df)
+                debug("joins for", s, "include", join_groups)
+                debug("prior join groups:", already_joined_dic_df)
                 selected_join_group = None
                 for jg in join_groups:
-                    logging.debug("checking if previous merges have", jg)
+                    debug("checking if previous merges have", jg)
                     if len(already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == jg)]) == 0:
                         continue
                     selected_join_group = jg
                     break
                 if selected_join_group is None:
-                    logging.error("Didn't find a matching prior join-group for", s)
+                    error("Didn't find a matching prior join-group for", s)
                     exit(-1)
                 # get the left and right join column names for selected join group
                 left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group']
                                                           == selected_join_group)].iloc[0]
                 left_join_column = left_join_df['column']
-                logging.debug("Left join column", left_join_column)
+                debug("Left join column", left_join_column)
 
                 right_join_df = s_dic_df.loc[(s_dic_df['join-group'] == selected_join_group)].iloc[0]
                 right_join_column = right_join_df['column']
-                logging.debug("Right join column", right_join_column)
-                logging.debug("Out length prior", len(out_df))
+                debug("Right join column", right_join_column)
+                debug("Out length prior", len(out_df))
                 out_df = pd.merge(out_df, data[s], how='left', left_on=left_join_column, right_on=right_join_column)
-                logging.debug("Out length after", len(out_df))
+                debug("Out length after", len(out_df))
             c = c + 1
-            logging.debug("Adding to prior join df", s_dic_df)
+            debug("Adding to prior join df", s_dic_df)
             already_joined_dic_df = pd.concat([already_joined_dic_df, s_dic_df])
-            logging.debug("Now prior join df:")
-            logging.debug(already_joined_dic_df)
+            debug("Now prior join df:")
+            debug(already_joined_dic_df)
 
         # fill in any Nan values after merging dataframes
         if args.na_value is not None:
             out_df.fillna(args.na_value, inplace=True)
 
         output_file = args.output
-        logging.info("Generating output", output_file)
-        logging.debug("out_df:", out_df)
+        info("Generating output", output_file)
+        debug("out_df:", out_df)
         out_df.to_csv(output_file, index=False)
     else:
-        logging.error("ERROR: --join requires at least one source specified with --sources parameter.")
+        error("ERROR: --join requires at least one source specified with --sources parameter.")
         exit(-1)
 
-logging.info("Exiting")
+info("Exiting")
 
 exit(0)

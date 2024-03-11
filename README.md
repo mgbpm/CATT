@@ -24,9 +24,12 @@ This software was funded by NHGRI and ClinGen.
 
 ## Prerequisites / Getting Started
 
-Python 3 is required (tested with Python 3.9.18), as well as the following modules.
+Python 3 is required (tested with Python 3.9.18), as well as the following modules, which you may configure in a virtual
+environment.
 
 ```
+python -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 or
