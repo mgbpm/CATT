@@ -1,5 +1,14 @@
 # clingen-ai-tools
-Tools for preparing ClinGen, ClinVar and GenCC datasets for use in machine learning and Large Language Model analysis.
+Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and Large Language Model
+analysis. The tool is command line-based but familiarity with Python is helpful.
+
+* Provides pre-configured numerical mapping of significant categorical data elements.
+* Allows simplified joining across large data sets on common values into a common CSV.
+* Generates per source record text summary for use by LLMs
+
+## Acknowledgements
+
+This software was funded by NHGRI and ClinGen.
 
 ## Features
 * Pre-configured for multiple data source files from ClinGen, ClinVar and GenCC.
@@ -7,13 +16,13 @@ Tools for preparing ClinGen, ClinVar and GenCC datasets for use in machine learn
 * Filtering output by gene or variant id.
 * Filtering output to include specified columns.
 * Output encoding for one-hot, categorical, and mapping values to ranks or new values
-* Future: date handling
+* Date handling
 * Included mappings for subset of columns
-* Expands value-list columns to multiple rows
+* Expands value-list columns to multiple rows (e.g. gene value of "MYH7,BRCA1" becomes two rows)
 * Extendable to new data sources through configuration
 * Generates new configuration files for new sources, including value counts
 
-## Prerequisites
+## Prerequisites / Getting Started
 
 Python 3 is required (tested with Python 3.9.18), as well as the following modules.
 
@@ -44,7 +53,7 @@ Command line options include:
 | --categories      | Generate output for columns configured to support categorical encoding.                                                |
 | --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.                      | 
 | --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv.          |
-| --na-value       | Set global replacement for NaN / missing values and trigger replacement including field level replacement.             |
+| --na-value        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.             |
 | --download        | Download source files when not present. Download source files when not present. Configured with config.yml.            |
 | --force           | Download source files even if already present.                                                                         |
 | --counts          | Generate value counts for the source files (helpful for determining mapping candidates).                               |
@@ -69,7 +78,7 @@ clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
 python main.py --info --map --categories --expand --onehot --gene="MYH7" --join --sources="vrs,clinvar-variant-summary,gencc-submissions,clingen-overall-scores-adult"
 ```
 
-Generate an individual output file for vrs and clingen-overal-scores-pediatric, while expanding references to multiple genes,
+Generate an individual output file for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
 and producing onehot and categorical encodings.
 ```
 python main.py --debug --expand --onehot -cateogries --individual --sources="clingen-overall-scores-pediatric,vrs"
@@ -125,14 +134,14 @@ tab-delimited (`tab`).
 | skip_rows     | A comma separated list of rows to skip (0 first row). Useful for when there are extra header rows with meta data in the source file.       |
 | delimiter     | `tab` or `comma`, to inform about file structure (csv or tsv).                                                                             |
 | quoting       | Default 0. Pandas quoting strategy to use when reading the file: {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}. |
-| strip_hash    | 0 or 1, to indicate whether to strip leading and trailing hash (#) characters from column headers. |
-| md5_url       | Optional. A web url suitable for downloading an md5 checksum file. |
-| md5_file      | Optional. The name of the downloaded md5 checksum file. |
-| template | Optional. A text template for use with --template in which text is processed per row and added as column |
+| strip_hash    | 0 or 1, to indicate whether to strip leading and trailing hash (#) characters from column headers.                                         |
+| md5_url       | Optional. A web url suitable for downloading an md5 checksum file.                                                                         |
+| md5_file      | Optional. The name of the downloaded md5 checksum file.                                                                                    |
+| template      | Optional. A text template for use with --template in which text is processed per row and added as column                                   |
 
 ### dictionary.csv
 Each source should also have a `dictionary.csv` file which provides meta-data about the columns in the source file.
-It includes a row for each column which contains the field name, definition, joinability group, and flags to enable
+It includes a row for each column which contains the field name, definition, join-ability group, and flags to enable
 one-hot encoding, categorical encoding, mapping, row expansion, etc.
 
 The below shows a sample dictionary for the clingen-dosage source. "GENE SYMBOL" and "HGNC ID" are configured to
@@ -153,32 +162,32 @@ GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FAL
 
 The `dictionary.csv` contains the following columns:
 
-| Column | Description |
-|--------|-------------|
-| column | The exact column header name from the file, stripped of hashes if configured to do so. |
-| comment | A brief description of the column. |
-| join-group | A token alias string used to designate columns across different sources that contain the same information values, such as a gene symbol. Required for supporing joining across files with --join. |
-| onehot | With --onehot, generate new output columns for each value of the column, with values of 0 or 1 depending on if the row has the specific value. |
-| category | With --categories, generate a new column with values mapped to unique numbers. |
-| continuous | Placeholder for future feature. Currently not implemented or supported. |
-| format | For date columns using days/age flag, this is the date format of the field (see common formats below). |
-| map | With --map, use `mapping.csv` to create new output columns based on values in the column. |
-| days | Not yet implemented. With --days, generate a new output column with the number of days since Jan 1 1970 to the date value. |
-| age | Not yet implemented. With --age, genarate a new output column with the number of days between today and the date value. |
-| expand | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value. |
-| na-value | A field level replacement for NaN / missing values, which are replace when using --na-value |
+| Column     | Description                                                                                                                                                                                        |
+|------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| column     | The exact column header name from the file, stripped of hashes if configured to do so.                                                                                                             |
+| comment    | A brief description of the column.                                                                                                                                                                 |
+| join-group | A token alias string used to designate columns across different sources that contain the same information values, such as a gene symbol. Required for supporting joining across files with --join. |
+| onehot     | With --onehot, generate new output columns for each value of the column, with values of 0 or 1 depending on if the row has the specific value.                                                     |
+| category   | With --categories, generate a new column with values mapped to unique numbers.                                                                                                                     |
+| continuous | Placeholder for future feature. Currently not implemented or supported.                                                                                                                            |
+| format     | For date columns using days/age flag, this is the date format of the field (see common formats below).                                                                                             |
+| map        | With --map, use `mapping.csv` to create new output columns based on values in the column.                                                                                                          |
+| days       | Not yet implemented. With --days, generate a new output column with the number of days since Jan 1 1970 to the date value.                                                                         |
+| age        | Not yet implemented. With --age, generate a new output column with the number of days between today and the date value.                                                                            |
+| expand     | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value.                                         |
+| na-value   | A field level replacement for NaN / missing values, which are replace when using --na-value                                                                                                        |
 
 Common date formats in source files for use in the `format` column include:
 
-| Date/time Value | Format |
-| --------------- | ------ |
-| Mon Nov 02 21:15:11 UTC 2020 | %a %b %d %H:%M%S %Z %Y |
-| 2016-06-08T14:14:30Z | %Y-%m-%dT%H:%M:%SZ |
-| 2018-06-07T16:00:00.000Z | %Y-%m-%dT%H:%M:%S.%fZ |
+| Date/time Value                 | Format                   |
+|---------------------------------|--------------------------|
+| Mon Nov 02 21:15:11 UTC 2020    | %a %b %d %H:%M%S %Z %Y   |
+| 2016-06-08T14:14:30Z            | %Y-%m-%dT%H:%M:%SZ       |
+| 2018-06-07T16:00:00.000Z        | %Y-%m-%dT%H:%M:%S.%fZ    |
 | Wed, 01 Feb 2023 00:00:00 -0000 | %a, %d %b %Y %H:%M:%S %z |
-| Mar 23, 2023 | %b %d, %Y |
-| 2020-12-24 | %Y-%m-%d |
-| 2020-06-18 13:31:17 | %Y-%m-%d %H:%M:%S |
+| Mar 23, 2023                    | %b %d, %Y                |
+| 2020-12-24                      | %Y-%m-%d                 |
+| 2020-06-18 13:31:17             | %Y-%m-%d %H:%M:%S        |
 
 ### mapping.csv
 Each source may optionally have `mapping.csv` file. If the `map` column is set to true in the dictionary for a specific
@@ -190,7 +199,7 @@ to the `map-name` column in the map.
 The `mapping.csv` file for the `clingen-dosage` source is as follows. The `column` matches the dictionary and header
 column name, the `value` contains the specific values that the column may contain, the `map-name` is the name of the
 new output column to create for the mapping, and `map-value` is the new value to set in the new output column based
-on the orginal column value.
+on the original column value.
 
 ```
 column,value,frequency,map-name,map-value
@@ -210,12 +219,12 @@ TRIPLOSENSITIVITY,Gene Associated with Autosomal Recessive Phenotype,1,triplo-in
 
 A `mapping.csv` file contains the following columns:
 
-| Column | Description                                                                                                              |
-| ------ |--------------------------------------------------------------------------------------------------------------------------|
-| column | The name of the column in the source file, which matches the header name and the dictionary entry.                       |
-| value | The distinct values of the original column in the source file (will be mapped to a new value).                           |
+| Column    | Description                                                                                                              |
+|-----------|--------------------------------------------------------------------------------------------------------------------------|
+| column    | The name of the column in the source file, which matches the header name and the dictionary entry.                       |
+| value     | The distinct values of the original column in the source file (will be mapped to a new value).                           |
 | frequency | Optional. Created during configuration auto-generation to give context to the frequency of the value in the source file. |
-| map-name | The name of the new column to be created for the mapping in the output file.                                             |
+| map-name  | The name of the new column to be created for the mapping in the output file.                                             |
 | map-value | The new value to be mapped to based on the existing column value.                                                        |
 
 ## Adding a New Source
