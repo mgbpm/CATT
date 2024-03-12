@@ -176,7 +176,7 @@ The `dictionary.csv` contains the following columns:
 | map        | With --map, use `mapping.csv` to create new output columns based on values in the column.                                                                                                          |
 | days       | Not yet implemented. With --days, generate a new output column with the number of days since Jan 1 1970 to the date value.                                                                         |
 | age        | Not yet implemented. With --age, generate a new output column with the number of days between today and the date value.                                                                            |
-| expand     | With --expand, if a column has a list of values (comma-separated) in a row, generate one output row per value, creating a new column for the single value.                                         |
+| expand     | With --expand, if a column has a list of values (comma-separated) in a row, generate one additional output row per value with a single value for each item. The original row is left intact.       |
 | na-value   | A field level replacement for NaN / missing values, which are replace when using --na-value                                                                                                        |
 
 Common date formats in source files for use in the `format` column include the following. If a date does not match the

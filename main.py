@@ -18,7 +18,6 @@ import logging
 # TODO:
 # ** divide major areas into functions and perhaps files for code clarity and maintainability
 # ** do I need to use globals? try to eliminate
-# ** add to README to use virtual env
 # ** fix error when downloading files that have no url configured (suggest manual download?)
 # ** os.path.join() for cross platform compatibility
 # ** check logic around needs_download during --force
@@ -640,14 +639,14 @@ for index, sourcefile in sourcefiles.iterrows():
         debug(dic)
         dic_filter_df = dic.loc[(dic.get('expand') == True)]
         if len(dic_filter_df) > 0:
-
+            debug("Found", len(dic_filter_df), "columns to expand.")
             sourcename = sourcefile.get('name')
             df = data[sourcefile.get('name')]
             debug("expand columns for", sourcename, "length", len(df))
             for i, r in dic_filter_df.iterrows():
                 col_name = r['column']
                 debug("expanding column", col_name)
-                expandable_rows_df = df[df[col_name].str.contains(",")]
+                expandable_rows_df = df.loc[(df.get(col_name).str.contains(","))]
                 # for each row, create a copy with each value
                 for exp_i, exp_r in expandable_rows_df.iterrows():
                     values = exp_r[col_name].split(",")
