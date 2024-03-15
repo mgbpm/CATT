@@ -63,7 +63,6 @@ Command line options include:
 | --sources         | List of sources to process, default is all sources.                                                                    |
 | --columns         | Column names to output. May specify comma separated list. Default is all columns.                                      |
 | --output          | Name of the overall output file. Default is `output.csv`.                                                              |
-| --individual      | Generate individual output files, one per source, that include the encodings and mappings.                             |
 | --join            | Create a joined data file using left joins following the --sources list. --sources must be specified.                  |
 | --variant         | Filter output by clinvar variation-id(s). May specify comma separated list. Default include all records.               | 
 | --gene            | Filter output by gene symbol(s). May specify comma separated list. Default is all records.                             |
@@ -80,10 +79,10 @@ clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
 python main.py --loglevel=info --map --categories --expand --onehot --gene="MYH7" --join --sources="vrs,clinvar-variant-summary,gencc-submissions,clingen-overall-scores-adult"
 ```
 
-Generate an individual output file for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
+Generate individual output files for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
 and producing onehot and categorical encodings.
 ```
-python main.py --loglevel=debug --expand --onehot -cateogries --individual --sources="clingen-overall-scores-pediatric,vrs"
+python main.py --loglevel=debug --expand --onehot -cateogries --sources="clingen-overall-scores-pediatric,vrs"
 ```
 
 ## Source Configuration

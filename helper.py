@@ -6,6 +6,7 @@ import dateparser
 import pytz
 import requests
 import logging
+import sys
 
 ####################
 #
@@ -14,24 +15,45 @@ import logging
 ####################
 
 
-def debug(*arguments, logtype='debug', sep=' '):
-    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+def log_setup(loglevel):
+    numeric_level = getattr(logging, loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % loglevel)
+
+    logging.basicConfig(filename='python.log', encoding='utf-8', level=numeric_level)
+
+    # send INFO to console
+    # logger = logging.getLogger(__name__)
+
+    # stdout_handler = logging.StreamHandler(stream=sys.stdout)
+    # stdout_handler.setLevel(logging.INFO)
+    # logger.addHandler(stdout_handler)
+
+    # file_handler = logging.FileHandler("python.log")
+    # file_handler.setLevel(numeric_level)
+    # logger.addHandler(file_handler)
+
+    return
 
 
-def info(*arguments, logtype='info', sep=' '):
-    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+def debug(*arguments, log_type='debug', sep=' '):
+    getattr(logging, log_type)(sep.join(str(a) for a in arguments))
 
 
-def warning(*arguments, logtype='warning', sep=' '):
-    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+def info(*arguments, log_type='info', sep=' '):
+    getattr(logging, log_type)(sep.join(str(a) for a in arguments))
 
 
-def error(*arguments, logtype='error', sep=' '):
-    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+def warning(*arguments, log_type='warning', sep=' '):
+    getattr(logging, log_type)(sep.join(str(a) for a in arguments))
 
 
-def critical(*arguments, logtype='critical', sep=' '):
-    getattr(logging, logtype)(sep.join(str(a) for a in arguments))
+def error(*arguments, log_type='error', sep=' '):
+    getattr(logging, log_type)(sep.join(str(a) for a in arguments))
+
+
+def critical(*arguments, log_type='critical', sep=' '):
+    getattr(logging, log_type)(sep.join(str(a) for a in arguments))
 
 
 def str_to_datetime(date_str, date_format):
@@ -80,29 +102,30 @@ def apply_template(template, record):
     return output
 
 
-def skip_array(skiptext):
-    if type(skiptext) is str:
-        return eval('['+skiptext+']')
-    if type(skiptext) is int:
-        return eval('['+str(skiptext)+']')
-    return eval('['+skiptext.astype(str)+']')
+def skip_array(skip_text):
+    if type(skip_text) is str:
+        return eval('['+skip_text+']')
+    if type(skip_text) is int:
+        return eval('['+str(skip_text)+']')
+    return eval('['+skip_text.astype(str)+']')
 
 
-def get_separator(delim):
-    if delim == 'tab':
+def get_separator(delimiter):
+    if delimiter == 'tab':
         return '\t'
-    elif delim == 'comma':
+    elif delimiter == 'comma':
         return ','
     else:
         return None
 
 
-def download(downloadurl, filepath):
-    debug("Downoading", downloadurl, "as", filepath)
-    req = requests.get(downloadurl)
-    open(filepath, 'wb').write(req.content)
+def download(download_url, filepath):
+    debug("Downloading", download_url, "as", filepath)
+    response = requests.get(download_url)
+    response.raise_for_status()
+    open(filepath, 'wb').write(response.content)
     info("Completed download of", filepath)
-    return req
+    return
 
 
 def get_md5(filename_with_path):
@@ -115,12 +138,12 @@ def get_md5(filename_with_path):
     return file_hash.hexdigest()
 
 
-def gunzip_file(fromfilepath, tofilepath):
-    debug("Ungzipping", fromfilepath, "to", tofilepath)
-    with gzip.open(fromfilepath, 'rb') as f_in:
-        with open(tofilepath, 'wb') as f_out:
+def gunzip_file(from_file_path, to_file_path):
+    debug("Unzipping", from_file_path, "to", to_file_path)
+    with gzip.open(from_file_path, 'rb') as f_in:
+        with open(to_file_path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-    info("Completed gunzip", tofilepath)
+    info("Completed gunzip", to_file_path)
 
 
 def get_join_precedence(join_group):

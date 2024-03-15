@@ -42,8 +42,8 @@ def parse():
     #                           help="Min/max scaling for variables to 0 to 1 range.")
 
     # configuration management
-    parser.add_argument('--download', action='store_true',
-                        help="Download datafiles that are not present. No processing or output with this option.")
+    # parser.add_argument('--download', action='store_true',
+    #                     help="Download datafiles that are not present. No processing or output with this option.")
     parser.add_argument('--force', action='store_true',
                         help="Download datafiles even if present and overwrite (with --download).")
     parser.add_argument('--counts', action='store_true',
@@ -53,15 +53,13 @@ def parse():
 
     # output control
     parser.add_argument('--sources',
-                        help="Comma-delimited list of sources to include based on 'name' in each 'config.yml'.",
-                        type=lambda src: [item for item in src.split(',')])  # validate against configured sources
+                        help="Comma-delimited list of sources to include based on name in each config.yml.",
+                        type=lambda s: [str(item) for item in s.split(',')])  # validate against configured sources
     parser.add_argument('--columns',
                         help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
-                        type=lambda src: [item for item in src.split(',')])  # validate against configured dictionaries
+                        type=lambda s: [str(item) for item in s.split(',')])  # validate against configured dictionaries
     parser.add_argument('--output',  action='store', type=str, default='output.csv',
                         help='The desired output file name.')
-    parser.add_argument('--individual',  action='store_true',
-                        help='Generate intermediate output file for each source.')
     parser.add_argument('--join',  action='store_true',
                         help='Generate merged output file for sources specified in --sources.')
     parser.add_argument('--variant',  action='store', type=str,
@@ -69,4 +67,10 @@ def parse():
     parser.add_argument('--gene',  action='store', type=str,
                         help='Filter to a specific gene (symbol). Variable must be tagged in join-group.')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.join and not args.sources:
+        print("ERROR: must specify --sources with --join. The sources list is the list of data files to join.")
+        exit(-1)
+
+    return args

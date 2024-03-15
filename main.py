@@ -2,26 +2,35 @@
 import arguments
 import helper
 import download
+import source
 import generate
 
 # other libraries
-import os
 from os import access, R_OK
 from os.path import isfile
 
 import pandas as pd
-import yaml
 from sklearn.preprocessing import LabelEncoder
-import logging
+
+# TODO:
+# ** Filter out non-selected columns from the dictionaries
+
+# TODO:
+# ** Examine behavior when --join with one file and no join column present
+# ** Examine behavior when using --map, --onehot, --categories, etc when columns are filtered with --columns
 
 # TODO:
 # ** divide major areas into functions and perhaps files for code clarity and maintainability
+#     * read all the config files first (for specified sources)
+#     * verify the datafiles and dictionaries exist
+#     * then read all the dictionary files (for specified sources)
+#     * then verify command line makes sense (joins, variant filter, gene filter, etc.)
+#     * then read the data files one by one
 # ** do I need to use globals? try to eliminate
 # ** fix error when downloading files that have no url configured (suggest manual download?)
 # ** os.path.join() for cross platform compatibility
 # ** check logic around needs_download during --force
 # ** dig more into why "is True" not working as expected in one spot
-
 
 # TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
@@ -33,84 +42,52 @@ import logging
 #  ** when creating dictionary template: analyze column data and set category,
 #       onehot, continuous, days, age, based on data types and frequency
 
-
 #########################
 #
-# PROGRAM ARGUMENTS
+# COMMAND LINE ARGUMENTS
 #
 #########################
 
 args = arguments.parse()
 
-if args.join and not args.sources:
-    print("ERROR: must specify --sources when specifying --join. The sources list is the list of data sources to join.")
-    exit(-1)
 
-
-####################
+#########################
 #
-# Logging setup
+# LOGGING & PANDAS SETUP
 #
-####################
-numeric_level = getattr(logging, args.loglevel.upper(), None)
-if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % args.loglevel)
-logging.basicConfig(filename='python.log', encoding='utf-8', level=numeric_level)
+#########################
 
-# constants
-one_hot_prefix = 'hot'
-categories_prefix = 'cat'
-ordinal_prefix = 'ord'
-rank_prefix = 'rnk'
-days_prefix = 'days'
-age_prefix = 'age'
-sources_path = './sources'
 
-# if multiple joins are possible, choose highest precedence join column
-join_precedence = ('variation-id', 'gene-symbol', 'hgnc-id')
+helper.log_setup(args.loglevel)
 
 pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 1000)
 pd.options.mode.copy_on_write = True  # will become default in Pandas 3
 
 
-###############################
+####################
 #
-# GENERATE CONFIGURATION YML
+# CONSTANTS
 #
-###############################
-config_yml = """--- # Source file description
-- name: source-name # usually directory name
-  url: # put download url here (e.g. https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)
-  download_file: # put name of download file here if different from final file name (e.g. for gz first) (optional)
-  file: data.tsv # put name of download file here (if gzip then put the final unzipped name here)
-  gzip: 0 # 0 = no gzip, 1 = use gunzip to transform download_file to file
-  header_row: 0 # the row number in file that contains the column headers starting at row zero for first line
-  skip_rows: None # comma separated list of rows to skip starting at 0 before the header (header 0 after skipped rows)
-  delimiter: tab # tab or csv delimited?
-  quoting: 0 # Pandas read_csv quoting strategy {0 = QUOTE_MINIMAL, 1 = QUOTE_ALL, 2 = QUOTE_NONNUMERIC, 3 = QUOTE_NONE}
-  strip_hash: 1 # Whether to strip leading hash(#) from column names (1=strip, 0=don't)
-  md5_url: # Download url for md5 checksum file (optional)
-  md5_file: # Name of md5 checksum file to download (optional)
-  template: # Text template which can generate a new output column. Template fields {column name} use dictionary names.
-"""
-if args.generate_config:
-    cnt = 0
-    for root, dirs, files in os.walk(sources_path):
-        for d in dirs:
-            # TODO: Use os.path.join()
-            yml = '{}/{}/{}'.format(sources_path, d, 'config.yml')
-            if isfile(yml) and access(yml, R_OK):
-                helper.debug("Found existing config.yml", yml)
-            else:
-                cnt = cnt + 1
-                helper.debug("Need to create", yml)
-                with open(yml, 'w') as file:
-                    file.write(config_yml)
-    if cnt == 0:
-        helper.info("All data sources have a config.yml")
-    else:
-        helper.info("Created", cnt, "config.yml files.")
+####################
+ONE_HOT_PREFIX = 'hot'
+CATEGORIES_PREFIX = 'cat'
+ORDINAL_PREFIX = 'ord'
+RANK_PREFIX = 'rnk'
+DAYS_PREFIX = 'days'
+AGE_PREFIX = 'age'
+SOURCES_PATH = './sources'
+
+
+#########################
+#
+# GENERATE CONFIG YML's
+#
+#########################
+
+# generate config.yml template files if not present in source directories
+generate.config(SOURCES_PATH)
+
 
 #########################
 #
@@ -119,53 +96,15 @@ if args.generate_config:
 #########################
 
 # find and create a list of all the config.yml files
-configList = []
-for root, dirs, files in os.walk(sources_path):
-    for f in files:
-        if f == 'config.yml':
-            # TODO: Use os.path.join()
-            file = '{}/{}/{}'.format(sources_path, os.path.basename(root), f)
-            configList += [file]
-            helper.debug(file)
-
-helper.debug("config file list:")
-helper.debug(configList)
+selected_sources = []
+if args.sources:
+    selected_sources = set(args.sources)
+source.load(SOURCES_PATH, selected_sources)
+helper.debug("config file list:", source.source_list())
 
 # load all the config files into a source list dataframe
-sourcefiles = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
-                                    'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file',
-                                    'template'])
-
-for c in configList:
-    helper.debug("for c in configList: c=", str(c))
-    # TODO: Use os.path.join()
-    path = c.replace('/config.yml', '')  # path is everything but trailing /config.yml
-    helper.debug("for c in configList: path=", path)
-    with open(c, "r") as stream:
-        try:
-            config = yaml.safe_load(stream)[0]
-            helper.debug("config:", str(c))
-            helper.debug(config)
-            # add to config dataframe
-            sourcefiles.loc[len(sourcefiles)] = [
-                config.get('name'), path, config.get('url'), config.get('download_file'),
-                config.get('file'), config.get('gzip'), config.get('header_row'),
-                config.get('skip_rows'), config.get('delimiter'), config.get('quoting'),
-                config.get('strip_hash'), config.get('md5_url'), config.get('md5_file'),
-                config.get('template')
-            ]
-
-        except yaml.YAMLError as exc:
-            helper.critical(exc)
-            exit(-1)
-
-# annotate source list with helper columns
-sourcefiles['dictionary'] = sourcefiles.apply(lambda x: 'dictionary.csv', axis=1)
-sourcefiles['mapping'] = sourcefiles.apply(lambda x: 'mapping.csv', axis=1)
-
-sourcefiles.set_index('name')
-
-helper.debug(sourcefiles)
+source_files_df = source.df()
+helper.debug(source_files_df)
 
 
 #########################
@@ -176,23 +115,24 @@ helper.debug(sourcefiles)
 
 # validate sourcefile selections in arguments if any
 if args.sources is None:
-    sources = list(set(sourcefiles['name']))
+    sources = list(set(source_files_df['name']))
 else:
-    sources = list(set(sourcefiles['name']) & set(args.sources))
+    sources = list(set(source_files_df['name']) & set(args.sources))
 
 # any invalid sources?
-invsources = set(sources).difference(sourcefiles['name'])
-if len(invsources) > 0:
-    helper.error("Invalid source file specficied in --sources parameter: ", invsources)
+invalid_sources = set(args.sources).difference(sources)
+if len(invalid_sources) > 0:
+    print("Invalid source file specified in --sources parameter: ", invalid_sources)
+    helper.critical("Invalid source file specified in --sources parameter: ", invalid_sources)
     exit(-1)
 
 helper.debug("Using source files: ", sources)
 
 # restrict source list by command line option, if any
 if args.sources:
-    sourcefiles = sourcefiles.loc[sourcefiles['name'].isin(sources)]
+    source_files_df = source_files_df.loc[source_files_df['name'].isin(sources)]
 
-helper.debug("Source configurations: ", sourcefiles)
+helper.debug("Source configurations: ", source_files_df)
 
 
 #########################
@@ -201,8 +141,9 @@ helper.debug("Source configurations: ", sourcefiles)
 #
 #########################
 
-if args.download:
-    download.all(sourcefiles, args.force)
+# download any missing data files (or all if "force" is enabled)
+download.all_files(source_files_df, args.force)
+
 
 #########################
 #
@@ -210,42 +151,9 @@ if args.download:
 #
 #########################
 
-
-def generate_dictionary(srcfile):
-    # TODO: analyze column data and set category, onehot, continuous, days, age, based on data types and frequency
-    print("Creating dictionary template")
-    # TODO: Use os.path.join()
-    data_file = srcfile.get('path') + '/' + srcfile.get('file')
-    separator_type = helper.get_separator(srcfile.get('delimiter'))
-    df_data_loc = pd.read_csv(data_file,
-                              header=srcfile.get('header_row'), sep=separator_type,
-                              skiprows=helper.skip_array(srcfile.get('skip_rows')), engine='python',
-                              quoting=srcfile.get('quoting'),
-                              nrows=0,
-                              on_bad_lines='warn')
-    cols = df_data_loc.columns.tolist()
-    # newcol = column.strip(' #')
-    # create dataframe with appropriate columns
-    df_dic = pd.DataFrame(columns=['column', 'comment', 'join-group', 'onehot', 'category',
-                                   'continuous', 'format', 'map', 'days', 'age', 'expand', 'na-value'])
-    # create one row per column header
-    defaults = {'comment': '', 'join-group': '', 'onehot': 'FALSE', 'category': 'FALSE', 'continuous': 'FALSE',
-                'format': '', 'map': 'FALSE', 'days': 'FALSE', 'age': 'FALSE', 'expand': 'FALSE', 'na-value': ''}
-    for field in cols:
-        df_dic.loc[len(df_dic)] = [field, defaults['comment'], defaults['join-group'], defaults['onehot'],
-                                   defaults['category'], defaults['continuous'], defaults['format'], defaults['map'],
-                                   defaults['days'], defaults['age'], defaults['expand']]
-    # save dataframe as csv
-    # TODO: Use os.path.join()
-    dictemplate = srcfile.get('path') + '/dictionary.csv'
-    df_dic.to_csv(dictemplate, index=False)
-    helper.info("Created dictionary template", dictemplate)
-    return ''
-
-
 #  verify existence of source dictionaries
 missing_dictionary = 0
-for index, sourcefile in sourcefiles.iterrows():
+for index, sourcefile in source_files_df.iterrows():
     # TODO: Use os.path.join()
     dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
@@ -254,7 +162,7 @@ for index, sourcefile in sourcefiles.iterrows():
         helper.warning("WARNING: Missing dictionary file", dictionary_file)
         missing_dictionary = missing_dictionary + 1
         if args.generate_config:
-            generate_dictionary(sourcefile)
+            generate.dictionary(sourcefile)
 
 if missing_dictionary:
     if not args.generate_config:
@@ -267,11 +175,11 @@ else:
 # setup sources dictionary
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
                                    'continuous', 'format', 'map', 'days', 'age', 'expand', 'na-value'])
-data = dict()
+data = {}
 global sourcecolumns, map_config_df
 
 #  process each source file and dictionary
-for index, sourcefile in sourcefiles.iterrows():
+for index, sourcefile in source_files_df.iterrows():
 
     helper.debug(sourcefile.get('path'), sourcefile.get('file'),
                  sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
@@ -290,6 +198,9 @@ for index, sourcefile in sourcefiles.iterrows():
     dic = pd.read_csv(dictionary_file)
 
     helper.debug(dic)
+
+    # if columns selected on command line, filter to only include those
+    dic = dic.loc[dic['column'].isin(args.columns)]
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
@@ -334,10 +245,10 @@ for index, sourcefile in sourcefiles.iterrows():
         df = data[sourcefile.get('name')]
         # rename columns
         for column in df:
-            newcol = column.strip(' #')
-            if newcol != column:
-                helper.debug("Stripping", column, "to", newcol)
-                data[sourcefile['name']] = df.rename({column: newcol}, axis='columns')
+            new_column = column.strip(' #')
+            if new_column != column:
+                helper.debug("Stripping", column, "to", new_column)
+                data[sourcefile['name']] = df.rename({column: new_column}, axis='columns')
             else:
                 helper.debug("Not stripping colum", column)
         helper.debug(data[sourcefile['name']])
@@ -370,6 +281,7 @@ for index, sourcefile in sourcefiles.iterrows():
 
     # is there an optimal spot to filter for gene and variant?
     if args.gene:
+        # TODO: what if no gene-id column is selected in --gene?
         helper.debug("filter genes", args.gene)
         dic_filter_df = dic.loc[(dic['join-group'] == 'gene-symbol')]
         if len(dic_filter_df) > 0:
@@ -385,6 +297,7 @@ for index, sourcefile in sourcefiles.iterrows():
             data[sourcefile['name']] = df
 
     if args.variant:
+        # TODO: what if no variation-id column is selected in --columns?
         helper.debug("filter variant", args.variant)
         dic_filter_df = dic.loc[(dic['join-group'] == 'variation-id')]
         if len(dic_filter_df) > 0:
@@ -503,8 +416,8 @@ for index, sourcefile in sourcefiles.iterrows():
             # onehot encoding
             #
             if args.onehot and r['onehot'] is True:
-                helper.debug("One-hot encoding", column_name, "as", one_hot_prefix+column_name)
-                oh_prefix = column_name + '_' + one_hot_prefix + '_'
+                helper.debug("One-hot encoding", column_name, "as", ONE_HOT_PREFIX+column_name)
+                oh_prefix = column_name + '_' + ONE_HOT_PREFIX + '_'
                 one_hot_encoded = pd.get_dummies(df[column_name], prefix=oh_prefix)
                 df = pd.concat([df, one_hot_encoded], axis=1)
 
@@ -513,8 +426,9 @@ for index, sourcefile in sourcefiles.iterrows():
             #
             if args.categories and r['category'] is True:
                 encoder = LabelEncoder()
-                encoded_column_name = categories_prefix + '_' + column_name
-                helper.debug("Category encoding", column_name, "as", encoded_column_name)
+                encoded_column_name = CATEGORIES_PREFIX + '_' + column_name
+                helper.debug("Category encoding", column_name, "as", encoded_column_name, "in",
+                             sourcefile.get('name'))
                 helper.debug("Existing values to be encoded:", df)
                 df[encoded_column_name] = encoder.fit_transform(df[column_name])
 
@@ -524,10 +438,10 @@ for index, sourcefile in sourcefiles.iterrows():
             if not pd.isna(r['format']):
                 helper.debug("Age/Days: Column=", column_name, " format=", r['format'])
                 if args.age:
-                    age_column = age_prefix + '_' + column_name
+                    age_column = AGE_PREFIX + '_' + column_name
                     df[age_column] = df.apply(lambda x: helper.get_age(x.get(column_name), r['format']), axis=1)
                 if args.days:
-                    days_column = days_prefix + '_' + column_name
+                    days_column = DAYS_PREFIX + '_' + column_name
                     df[days_column] = df.apply(lambda x: helper.get_days(x.get(column_name), r['format']), axis=1)
 
             # column-level NaN value replacement
@@ -577,21 +491,16 @@ helper.debug("Dictionary:", dictionary)
 #########################
 
 # create per-source output files to debugging purposes
-if args.individual:
-    helper.debug("sources.keys:", data.keys())
-    helper.debug("sourcefiles:", sourcefiles)
+for d in data.keys():
+    helper.debug("columns for ", d, ":")
+    helper.debug(data[d].columns.values.tolist())
 
-    # summarize our sources
-    for d in data.keys():
-        helper.debug("columns for ", d, ":")
-        helper.debug(data[d].columns.values.tolist())
-
-        # files put in current directory, prepend source name to file
-        output_file = d + '-' + args.output
-        helper.debug("Generating intermediate source output", output_file)
-        out_df = data[d]
-        helper.debug("out_df:", out_df)
-        out_df.to_csv(output_file, index=False)
+    # files put in current directory, prepend source name to file
+    output_file = d + '-' + args.output
+    helper.debug("Generating intermediate source output", output_file)
+    out_df = data[d]
+    helper.debug("out_df:", out_df)
+    out_df.to_csv(output_file, index=False)
 
 
 #########################
@@ -633,7 +542,7 @@ if args.join:
                     selected_join_group = jg
                     break
                 if selected_join_group is None:
-                    helper.error("Didn't find a matching prior join-group for", s)
+                    helper.critical("Didn't find a matching prior join-group for", s)
                     exit(-1)
                 # get the left and right join column names for selected join group
                 left_join_df = already_joined_dic_df.loc[(already_joined_dic_df['join-group']
