@@ -120,12 +120,12 @@ def get_separator(delimiter):
 
 
 def download(download_url, filepath):
-    debug("Downloading", download_url, "as", filepath)
+    info("Downloading", download_url, "as", filepath)
     response = requests.get(download_url)
     response.raise_for_status()
     open(filepath, 'wb').write(response.content)
     info("Completed download of", filepath)
-    return
+    return response
 
 
 def get_md5(filename_with_path):
