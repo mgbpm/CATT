@@ -18,6 +18,7 @@ def all_files(source_files_df, force):
         if download(s, force):
             download_count = download_count + 1
 
+    if
     helper.info("Downloading complete;", download_count, "files.")
     # print("Downloading complete;", download_count, "files.")
 
@@ -56,20 +57,21 @@ def download(source, force):
         md5_file_path = source_path + '/' + md5_file
     md5_hash_downloaded = ''
     md5_url = source.get('md5_url')
-    file_we_downloaded = ''
     url = source.get('url')
     if url:
         if download_file:
-            r = helper.download(url, download_file_path)
+            helper.download(url, download_file_path)
             file_we_downloaded = download_file_path
         else:
-            r = helper.download(url, file_path)
+            helper.download(url, file_path)
             file_we_downloaded = file_path
         if md5_url:  # if we are doing md5 check then get the hash for the downloaded file
             md5_hash_downloaded = helper.get_md5(file_we_downloaded)
         helper.info("Completed data file download;", file_we_downloaded)
     else:
-        print("WARNING: no url for", file, "for", source.get('name'), "; Please acquire manually.")
+        print("ERROR: no url for", file, "for source", source.get('name'), "; Please acquire manually.")
+        helper.critical("No url for", file, "for source", source.get('name'), "; Please acquire manually.")
+        exit(-1)
     if md5_url:
         if md5_file:
             r = helper.download(md5_url, md5_file_path)

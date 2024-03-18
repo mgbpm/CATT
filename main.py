@@ -6,6 +6,7 @@ import source
 import generate
 
 # other libraries
+import os
 from os import access, R_OK
 from os.path import isfile
 
@@ -13,23 +14,35 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 # TODO:
-# ** Filter out non-selected columns from the dictionaries
+# ** finish dictionary definitions for all files
 
 # TODO:
-# ** Examine behavior when --join with one file and no join column present
+# ** Filter out non-selected columns from the dictionaries
+# ** Consider _not_ filtering join columns and then getting rid of them later?
+
+# TODO:
+# Potential strategy for both memory management and full feature set
+# 1. Import in chunks using all columns
+#  a. Filter out any rows as specified on commmand line (variant, gene)
+#  b. Execute all encodings on the chunk if any rows left after filtering
+#  c. Append chunk to captured df after eliminating non-selected columns if specified
+# 2. Export individual encoded dataframe
+# 3. Join to "output" dataframe if --join
+# 4. Remove any references to individual dataframe to free up memory
+#
+# import pandas as pd
+# iter_csv = pd.read_csv('file.csv', iterator=True, chunksize=1000)
+# df = pd.concat([chunk[chunk['field'] > constant] for chunk in iter_csv])
+
+# TODO:
 # ** Examine behavior when using --map, --onehot, --categories, etc when columns are filtered with --columns
+# ** Consider a --low-memory option in which columns are filtered at read, but by default filtered after processing
 
 # TODO:
 # ** divide major areas into functions and perhaps files for code clarity and maintainability
-#     * read all the config files first (for specified sources)
-#     * verify the datafiles and dictionaries exist
-#     * then read all the dictionary files (for specified sources)
 #     * then verify command line makes sense (joins, variant filter, gene filter, etc.)
 #     * then read the data files one by one
 # ** do I need to use globals? try to eliminate
-# ** fix error when downloading files that have no url configured (suggest manual download?)
-# ** os.path.join() for cross platform compatibility
-# ** check logic around needs_download during --force
 # ** dig more into why "is True" not working as expected in one spot
 
 # TODO:
@@ -76,7 +89,7 @@ ORDINAL_PREFIX = 'ord'
 RANK_PREFIX = 'rnk'
 DAYS_PREFIX = 'days'
 AGE_PREFIX = 'age'
-SOURCES_PATH = './sources'
+SOURCES_PATH = os.path.normpath('./sources')
 
 
 #########################
@@ -154,8 +167,7 @@ download.all_files(source_files_df, args.force)
 #  verify existence of source dictionaries
 missing_dictionary = 0
 for index, sourcefile in source_files_df.iterrows():
-    # TODO: Use os.path.join()
-    dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
+    dictionary_file = str(os.path.join(sourcefile.get('path'), sourcefile.get('dictionary')))
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
         helper.debug("Found dictionary file", dictionary_file)
     else:
@@ -176,7 +188,7 @@ else:
 dictionary = pd.DataFrame(columns=['name', 'path', 'file', 'column', 'comment', 'join-group', 'onehot', 'category',
                                    'continuous', 'format', 'map', 'days', 'age', 'expand', 'na-value'])
 data = {}
-global sourcecolumns, map_config_df
+# global sourcecolumns, map_config_df
 
 #  process each source file and dictionary
 for index, sourcefile in source_files_df.iterrows():
@@ -190,8 +202,7 @@ for index, sourcefile in source_files_df.iterrows():
     helper.debug("Reading dictionary")
     helper.debug("sourcefile =", sourcefile)
 
-    # TODO: Use os.path.join()
-    dictionary_file = sourcefile.get('path') + '/' + sourcefile.get('dictionary')
+    dictionary_file = str(os.path.join(sourcefile.get('path'), sourcefile.get('dictionary')))
 
     helper.info("Read dictionary", dictionary_file)
 
@@ -216,8 +227,7 @@ for index, sourcefile in source_files_df.iterrows():
     # read source sources
     helper.info("Reading source for", sourcefile.get('name'), "...")
 
-    # TODO: Use os.path.join()
-    sourcefile_file = sourcefile.get('path') + '/' + sourcefile.get('file')
+    sourcefile_file = str(os.path.join(sourcefile.get('path'), sourcefile.get('file')))
 
     if args.columns is None:
         df_tmp = pd.read_csv(sourcefile_file,
@@ -232,7 +242,6 @@ for index, sourcefile in source_files_df.iterrows():
     else:
         sourcecolumns = list(set(dic['column']) & set(args.columns))
         data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-                                                     #  usecols=sourcecolumns,
                                                      usecols=lambda x: x.strip(' #') in sourcecolumns,
                                                      header=sourcefile.get('header_row'), sep=separator,
                                                      skiprows=helper.skip_array(sourcefile.get('skip_rows')),
@@ -320,8 +329,7 @@ for index, sourcefile in source_files_df.iterrows():
         print()
 
     # read mapping file, if any, and filter by selected columns, if any
-    # TODO: Use os.path.join()
-    mapping_file = sourcefile['path'] + '/' + 'mapping.csv'
+    mapping_file = str(os.path.join(sourcefile['path'], 'mapping.csv'))
     map_config_df = pd.DataFrame()
     if not args.generate_config:
         map_config_df = pd.read_csv(mapping_file)

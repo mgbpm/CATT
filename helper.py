@@ -20,20 +20,12 @@ def log_setup(loglevel):
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % loglevel)
 
-    logging.basicConfig(filename='python.log', encoding='utf-8', level=numeric_level)
-
-    # send INFO to console
-    # logger = logging.getLogger(__name__)
-
-    # stdout_handler = logging.StreamHandler(stream=sys.stdout)
-    # stdout_handler.setLevel(logging.INFO)
-    # logger.addHandler(stdout_handler)
-
-    # file_handler = logging.FileHandler("python.log")
-    # file_handler.setLevel(numeric_level)
-    # logger.addHandler(file_handler)
-
-    return
+    logging.basicConfig(
+        level=numeric_level,
+        encoding='utf-8',
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[logging.FileHandler("python.log"), logging.StreamHandler(sys.stdout)],
+    )
 
 
 def debug(*arguments, log_type='debug', sep=' '):

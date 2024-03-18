@@ -16,16 +16,16 @@ def show():
 
 
 def source_list():
-    l = []
+    tmp_list = []
     for s in sources:
-        l.append(s.name)
-    return l
+        tmp_list.append(s.name)
+    return tmp_list
 
 
 def df():
     dataframe = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
-                          'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file',
-                          'template', 'dictionary', 'mapping'])
+                                      'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file',
+                                      'template', 'dictionary', 'mapping'])
     for s in sources:
         dataframe.loc[len(dataframe)] = [
             s.name, s.path, s.url, s.download_file,
@@ -43,10 +43,9 @@ def load(sources_path, selected_sources):
     for root, dirs, files in os.walk(sources_path):
         for f in files:
             if f == 'config.yml':
-                # TODO: Use os.path.join()
                 name = os.path.basename(root)
                 if (name in selected_sources) or (len(selected_sources) == 0):
-                    file = '{}/{}/{}'.format(sources_path, os.path.basename(root), f)
+                    file = str(os.path.join(sources_path, os.path.basename(root), f))
                     Source(file)
                     helper.debug(file)
 
