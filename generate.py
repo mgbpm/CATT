@@ -37,8 +37,8 @@ def config(sources_path):
     cnt = 0
     for root, dirs, files in os.walk(sources_path):
         for d in dirs:
-            # TODO: Use os.path.join()
-            yml = '{}/{}/{}'.format(sources_path, d, 'config.yml')
+            yml = str(os.path.join(sources_path, d, 'config.yml'))
+
             if isfile(yml) and access(yml, R_OK):
                 helper.debug("Found existing config.yml", yml)
             else:
@@ -58,8 +58,7 @@ def config(sources_path):
 def dictionary(srcfile):
     # TODO: analyze column data and set category, onehot, continuous, days, age, based on data types and frequency
     print("Creating dictionary template")
-    # TODO: Use os.path.join()
-    data_file = srcfile.get('path') + '/' + srcfile.get('file')
+    data_file = str(os.path.join(srcfile.get('path'), srcfile.get('file')))
     separator_type = helper.get_separator(srcfile.get('delimiter'))
     df_data_loc = pd.read_csv(data_file,
                               header=srcfile.get('header_row'), sep=separator_type,
@@ -79,8 +78,33 @@ def dictionary(srcfile):
                                    defaults['category'], defaults['continuous'], defaults['format'], defaults['map'],
                                    defaults['days'], defaults['age'], defaults['expand']]
     # save dataframe as csv
-    # TODO: Use os.path.join()
-    dictionary_template = srcfile.get('path') + '/dictionary.csv'
+    dictionary_template = str(os.path.join(srcfile.get('path'),'dictionary.csv'))
     df_dic.to_csv(dictionary_template, index=False)
     helper.info("Created dictionary template", dictionary_template)
     return ''
+
+
+def mapping(mapping_file, data, sourcefile, dic):
+    # loop through each column that has rank and/or group set to True
+    # sourcecolumns has list of columns to sift through for settings
+    # create map configs dataframe to collect the values
+    helper.debug("Generate mapping file", mapping_file)
+    map_config_df = pd.DataFrame(
+        columns=['column', 'value', 'frequency', 'map-name', 'map-value']
+    )
+    df = data[sourcefile['name']]
+    for i, r in dic.iterrows():
+        if r['map'] is True:
+            print()
+            print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
+            value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
+            helper.debug(df)
+            helper.debug(value_counts_df)
+            print(value_counts_df)
+
+            # add to the map configs dataframe
+            helper.debug("generate configs for mapping/ranking for", r['column'])
+            for ind, row in value_counts_df.iterrows():
+                map_config_df.loc[len(map_config_df)] = [r['column'], row['value'], row['count'], '', '']
+    # save the map configs dataframe as a "map-template" file in the source file directory
+    map_config_df.to_csv(mapping_file + '.template', index=False)

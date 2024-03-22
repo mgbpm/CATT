@@ -14,7 +14,10 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 # TODO:
-# ** finish dictionary definitions for all files
+# ** finish dictionary definitions for all sources
+
+# TODO:
+# ** verify mapping gives errors when value not found and recommend updating mapping file
 
 # TODO:
 # ** Filter out non-selected columns from the dictionaries
@@ -23,7 +26,7 @@ from sklearn.preprocessing import LabelEncoder
 # TODO:
 # Potential strategy for both memory management and full feature set
 # 1. Import in chunks using all columns
-#  a. Filter out any rows as specified on commmand line (variant, gene)
+#  a. Filter out any rows as specified on command line (variant, gene)
 #  b. Execute all encodings on the chunk if any rows left after filtering
 #  c. Append chunk to captured df after eliminating non-selected columns if specified
 # 2. Export individual encoded dataframe
@@ -171,17 +174,12 @@ for index, sourcefile in source_files_df.iterrows():
     if isfile(dictionary_file) and access(dictionary_file, R_OK):
         helper.debug("Found dictionary file", dictionary_file)
     else:
-        helper.warning("WARNING: Missing dictionary file", dictionary_file)
         missing_dictionary = missing_dictionary + 1
-        if args.generate_config:
-            generate.dictionary(sourcefile)
+        generate.dictionary(sourcefile)
+        helper.warning("Created template for missing dictionary file", dictionary_file)
+        print("Created missing dictionary file", dictionary_file, "; Edit the file to configure field level options.")
 
-if missing_dictionary:
-    if not args.generate_config:
-        helper.critical(missing_dictionary, "missing dictionaries.",
-                        "Use --generate-config to create template configurations.")
-        exit(-1)
-else:
+if not missing_dictionary:
     helper.debug("Verified all dictionaries exist.")
 
 # setup sources dictionary
@@ -192,7 +190,7 @@ data = {}
 
 #  process each source file and dictionary
 for index, sourcefile in source_files_df.iterrows():
-
+    sourcename = sourcefile.get('name')
     helper.debug(sourcefile.get('path'), sourcefile.get('file'),
                  sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
 
@@ -210,8 +208,11 @@ for index, sourcefile in source_files_df.iterrows():
 
     helper.debug(dic)
 
+    # verify if mapping file exists or not, generate mapping file if necessary based on full dataset
+
     # if columns selected on command line, filter to only include those
-    dic = dic.loc[dic['column'].isin(args.columns)]
+    if args.columns is not None:
+        dic = dic.loc[dic['column'].isin(args.columns)]
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
@@ -271,7 +272,7 @@ for index, sourcefile in source_files_df.iterrows():
         dic_filter_df = dic.loc[(dic.get('expand') == True)]
         if len(dic_filter_df) > 0:
             helper.debug("Found", len(dic_filter_df), "columns to expand.")
-            sourcename = sourcefile.get('name')
+
             df = data[sourcename]
             helper.debug("expand columns for", sourcename, "length", len(df))
             for i, r in dic_filter_df.iterrows():
@@ -324,47 +325,41 @@ for index, sourcefile in source_files_df.iterrows():
     # show count of unique values per column
     if args.counts:
         print(sourcefile['name'], ":", data[sourcefile['name']].nunique())
-        print("Finshed reading source file")
+        print("Finished reading source file")
         print()
         print()
 
     # read mapping file, if any, and filter by selected columns, if any
-    mapping_file = str(os.path.join(sourcefile['path'], 'mapping.csv'))
     map_config_df = pd.DataFrame()
-    if not args.generate_config:
-        map_config_df = pd.read_csv(mapping_file)
-        map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
+    if args.map:
+        # see if any of the dictionary fields are set with a map encoder
+        dic_filter_df = dic.loc[(dic['map'] == True)]
+        if len(dic_filter_df) > 0:
+            mapping_file = str(os.path.join(sourcefile['path'], 'mapping.csv'))
+            if not (isfile(mapping_file) and access(mapping_file, R_OK)):
+                # no mapping file found, let's create one, but ask user to re-run if columns are filtered
+                if args.columns is None:
+                    generate.mapping(mapping_file, data, sourcefile, dic)
+                    helper.error("Cannot map columns without mapping file for", sourcename,
+                                 "; Please edit generated template.")
+                    print("ERROR: Cannot map columns without mapping file for", sourcename,
+                          "; Please edit generated template.")
+                    exit(-1)
+                else:
+                    helper.error("Mapping columns specified but no mapping file configured for", sourcename,
+                                 "; Please run again without --columns to generate a complete mapping file.")
+                    print("ERROR: Mapping columns specified but no mapping file configured for", sourcename,
+                          ";  Please run again without --columns to generate a complete mapping file.")
+                    exit(-1)
+            else:
+                helper.debug("Found existing mapping file", mapping_file)
 
-        helper.debug("Mapping Config:", map_config_df)
+                map_config_df = pd.read_csv(mapping_file)
+                map_config_df = map_config_df.loc[map_config_df['column'].isin(sourcecolumns)]
 
-    # for rank and group mapping columns, show the counts of each value
-    if args.counts:
-        # loop through each column that has rank and/or group set to True
-        # sourcecolumns has list of columns to sift through for settings
-        if args.generate_config:
-            # create map configs dataframe to collect the values
-            map_config_df = pd.DataFrame(
-                columns=['column', 'value', 'frequency', 'map-name', 'map-value']
-            )
-        df = data[sourcefile['name']]
-        for i, r in dic.iterrows():
-            if r['map'] is True:
-                print()
-                print("unique values and counts for", sourcefile['path'], sourcefile['file'], r['column'])
-                value_counts_df = df[r['column']].value_counts().rename_axis('value').reset_index(name='count')
-                helper.debug(df)
-                helper.debug(value_counts_df)
-                if args.counts:
-                    print(value_counts_df)
-
-                if args.generate_config:
-                    # add to the map configs dataframe
-                    helper.debug("generate configs for mapping/ranking for", r['column'])
-                    for ind, row in value_counts_df.iterrows():
-                        map_config_df.loc[len(map_config_df)] = [r['column'], row['value'], row['count'], '', '']
-        if args.generate_config:
-            # save the map configs dataframe as a "map-template" file in the source file directory
-            map_config_df.to_csv(mapping_file + '.template', index=False)
+                helper.debug("Mapping Config:", map_config_df)
+        else:
+            helper.debug("No map fields found in dictionary for", sourcename)
 
     # create augmented columns for onehot, mapping, continuous, scaling, categories, rank
     if args.onehot or args.categories or args.map:  # or args.continuous or args.scaling
@@ -384,7 +379,7 @@ for index, sourcefile in source_files_df.iterrows():
             if args.map and r['map'] is True:
 
                 # get mapping subset for this column, if any (dictionary column name == mapping column name)
-                map_col_df = map_config_df.loc[map_config_df['column'] == column_name]
+                map_col_df = map_config_df.loc[(map_config_df['column'] == column_name)]
                 map_col_df = map_col_df.drop(columns={'column', 'frequency'}, axis=1)
                 map_col_df.rename(columns={'value': column_name}, inplace=True)
 

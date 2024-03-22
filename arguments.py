@@ -42,10 +42,8 @@ def parse():
     #                           help="Min/max scaling for variables to 0 to 1 range.")
 
     # configuration management
-    # parser.add_argument('--download', action='store_true',
-    #                     help="Download datafiles that are not present. No processing or output with this option.")
     parser.add_argument('--force', action='store_true',
-                        help="Download datafiles even if present and overwrite (with --download).")
+                        help="Download datafiles even if present and overwrite.")
     parser.add_argument('--counts', action='store_true',
                         help="Generate unique value counts for columns configured for mapping and ranking.")
     parser.add_argument('--generate-config', action='store_true', dest='generate_config',

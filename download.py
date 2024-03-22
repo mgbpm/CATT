@@ -18,9 +18,10 @@ def all_files(source_files_df, force):
         if download(s, force):
             download_count = download_count + 1
 
-    if
-    helper.info("Downloading complete;", download_count, "files.")
-    # print("Downloading complete;", download_count, "files.")
+    if download_count > 0:
+        helper.info("Downloading complete;", download_count, "files.")
+    else:
+        helper.info("All files present. No files to download.")
 
 
 def download(source, force):
