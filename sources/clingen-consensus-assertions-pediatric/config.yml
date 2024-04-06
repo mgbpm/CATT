@@ -10,5 +10,13 @@
   md5_url:
   md5_file:
   template: >
-    Clingen's consensus pediatric actionability gene-disease assertions indicate pathogenic mutations in gene(s) {geneOrVariant} may be
-    associated with condition {disease} with {consensusAssertion} and status {status-overall} and assertion status {status-assertion}.
+    {% with assertionList = ('Assertion Pending', 'N/A - Insufficient evidence: early rule-out', 'N/A - Insufficient evidence: expert review', 'No Assertion: scoring group absence') %}
+    {% choose %}
+    {% when dict.consensusAssertion in assertionList %}
+    Currently, ClinGen does not have a consensus assertion for the actionability of the ${dict.geneOrVariant} in the context of “${dict.disease}”. The reason for this is “${dict.consensusAssertion}”. This assertion was last updated on ${dict.lastUpdated}.
+    {% end %}
+    {% otherwise %}
+    ClinGen's consensus review asserts that there is ${dict.consensusAssertion} clinically for pathogenic variants the ${dict.geneOrVariant} gene in the context ${dict.disease}. The status of this assertion is ${dict['status-assertion']} and the assertion has been ${dict['status-overall']}. This actionability assertion was last updated on ${dict.lastUpdated}.
+    {% end %}
+    {% end %}
+    {% end %}

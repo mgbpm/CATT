@@ -34,7 +34,7 @@ python -m pip install -r requirements.txt
 ```
 or
 ```
- python -m pip install pandas argparse sklearn.preprocessing pyyaml requests dateparser
+ python -m pip install pandas argparse sklearn.preprocessing pyyaml requests dateparser genshi
 ```
 
 Please use Pandas 2.0.0 or greater.
@@ -104,6 +104,11 @@ not specified). The downloaded file is then uncompressed as directed by the `gzi
 The file header is the first (0) row following the list of rows to skip `skip_rows`. The format of the file is
 tab-delimited (`tab`).
 
+The `template` value is used with the --template command line option to generate a textual description of 
+each row in the file. The template uses Genshi's NewTextTemplate module (see 
+https://genshi.readthedocs.io/en/latest/text-templates/). Each column value is available to the template as
+dict.column_name, or if the column name has spaces use dict['column name'].
+
 ```
 --- # ClinVar Submission Summary
 - name: clinvar-submission-summary
@@ -119,10 +124,19 @@ tab-delimited (`tab`).
   md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz.md5
   md5_file: submission_summary.txt.gz.md5
   template: >
-    {Submitter} submitted their laboratory's assertion ClinVar VariationID of {VariationID} on gene 
-    {SubmittedGeneSymbol}. {Submitter} indicates an association with {SubmittedPhenotypeInfo} conditions with 
-    significance {ClinicalSignificance}. The laboratory most recently evaluated this variant on {DateLastEvaluated}
-    with a review status of {ReviewStatus}. That laboratory's basis for this interpretation: {Description}.
+    ${dict.Submitter} has classified the variant with ClinVar Variation ID ${dict.VariationID} in the 
+    {% choose %}{% when len(str(dict.SubmittedGeneSymbol)) > 0 %}${dict.SubmittedGeneSymbol}{% end %}
+    {% otherwise %}not provided{% end %}{% end %} gene as ${dict.ClinicalSignificance}. The accession number or 
+    SCV ID for this submission 
+    is ${dict.SCV}. This variant has been associated with the following condition(s) by the submitter: 
+    ${dict.ReportedPhenotypeInfo}. This variant was last evaluated by the submitter on 
+    {% choose %}{% when len(str(dict.DateLastEvaluated)) > 0 %}${dict.DateLastEvaluated}{% end %}
+    {% otherwise %}"date not provided"{% end %}{% end %}, and the 
+    review status of this submission is: ${dict.ReviewStatus}. The setting in which the variant classification was made 
+    is: ${dict.CollectionMethod}. The submitter has provided the following evidence to support their variant 
+    classification: 
+    {% choose %}{% when len(str(dict.Description)) > 0 %}“${dict.Description}”{% end %}
+    {% otherwise %}"no details provided"{% end %}{% end %}
 ```
 | Setting       | Description                                                                                                                                |
 |---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
@@ -138,7 +152,7 @@ tab-delimited (`tab`).
 | strip_hash    | 0 or 1, to indicate whether to strip leading and trailing hash (#) characters from column headers.                                         |
 | md5_url       | Optional. A web url suitable for downloading an md5 checksum file.                                                                         |
 | md5_file      | Optional. The name of the downloaded md5 checksum file.                                                                                    |
-| template      | Optional. A text template for use with --template in which text is processed per row and added as column                                   |
+| template      | Optional. A text template in Genshi format for use with --template in which text is processed per row and added as column                  |
 
 ### dictionary.csv
 Each source should also have a `dictionary.csv` file which provides meta-data about the columns in the source file.

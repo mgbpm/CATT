@@ -12,7 +12,16 @@
   md5_url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz.md5
   md5_file: submission_summary.txt.gz.md5
   template: >
-    {Submitter} submitted their laboratory's assertion ClinVar VariationID of {VariationID} on gene 
-    {SubmittedGeneSymbol}. {Submitter} indicates an association with {SubmittedPhenotypeInfo} conditions with 
-    significance {ClinicalSignificance}. The laboratory most recently evaluated this variant on {DateLastEvaluated}
-    with a review status of {ReviewStatus}. That laboratory's basis for this interpretation: {Description}.
+    ${dict.Submitter} has classified the variant with ClinVar Variation ID ${dict.VariationID} in the 
+    {% choose %}{% when len(str(dict.SubmittedGeneSymbol)) > 0 %}${dict.SubmittedGeneSymbol}{% end %}
+    {% otherwise %}not provided{% end %}{% end %} gene as ${dict.ClinicalSignificance}. The accession number or 
+    SCV ID for this submission 
+    is ${dict.SCV}. This variant has been associated with the following condition(s) by the submitter: 
+    ${dict.ReportedPhenotypeInfo}. This variant was last evaluated by the submitter on 
+    {% choose %}{% when len(str(dict.DateLastEvaluated)) > 0 %}${dict.DateLastEvaluated}{% end %}
+    {% otherwise %}"date not provided"{% end %}{% end %}, and the 
+    review status of this submission is: ${dict.ReviewStatus}. The setting in which the variant classification was made 
+    is: ${dict.CollectionMethod}. The submitter has provided the following evidence to support their variant 
+    classification: 
+    {% choose %}{% when len(str(dict.Description)) > 0 %}“${dict.Description}”{% end %}
+    {% otherwise %}"no details provided"{% end %}{% end %}.

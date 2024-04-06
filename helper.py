@@ -7,6 +7,7 @@ import pytz
 import requests
 import logging
 import sys
+from genshi.template import NewTextTemplate
 
 ####################
 #
@@ -91,6 +92,20 @@ def apply_template(template, record):
         # substitute value for instances of {key} in template
         param = '{' + str(key) + '}'
         output = output.replace(param, str(value))
+    return output
+
+
+# Acquire a Genshi Text Template object for our template pattern
+def get_genshi_template(template_text):
+    return NewTextTemplate(template_text)
+
+
+# Apply the Genshi Text Template to the record and return the generated output
+def apply_genshi_template(template, record):
+    # template is the string from the config.yml
+    # record is the record array for one line of the source
+    output = str(template.generate(dict=record))
+    debug("Template output:",output)
     return output
 
 
