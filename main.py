@@ -478,12 +478,15 @@ for index, sourcefile in source_files_df.iterrows():
         template_column_name = "{}-template".format(sourcefile_name)
         helper.debug("Applying template to", sourcefile_name, "as", template_column_name)
         df = data[sourcefile_name]
-        template_text = sourcefile['template']
-        # TODO: check first to see if there are any rows to avoid "ValueError: Cannot set a DataFrame with multiple columns to the single column"
-        genshi_template = helper.get_genshi_template(template_text)
-        df[template_column_name] = df.apply(lambda record: helper.apply_genshi_template(genshi_template, record), axis=1)
-        print("df after template:")
-        print(df)
+        if len(df) > 0:
+            template_text = sourcefile['template']
+            genshi_template = helper.get_genshi_template(template_text)
+            df[template_column_name] = df.apply(lambda record: helper.apply_genshi_template(genshi_template, record),
+                                                axis=1)
+        else:
+            df[template_column_name] = df.apply(lambda x: '', axis=1)
+        helper.debug("df after template:")
+        helper.debug(df)
         data[sourcefile_name] = df
 
     helper.debug("Data:", data[sourcefile['name']])

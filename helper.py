@@ -104,7 +104,7 @@ def get_genshi_template(template_text):
 def apply_genshi_template(template, record):
     # template is the string from the config.yml
     # record is the record array for one line of the source
-    output = str(template.generate(dict=record))
+    output = str(template.generate(dict=record)).strip()
     debug("Template output:",output)
     return output
 
