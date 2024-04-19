@@ -68,9 +68,9 @@ Command line options include:
 
 ## Example Usage
 
-Force downloads of all sources.
+Force downloads of all sources, even if files already exist locally.
 ```
-python main.py --download --force --loglevel=info
+python main.py --force --loglevel=info
 ```
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
@@ -84,6 +84,10 @@ and producing onehot and categorical encodings.
 python main.py --loglevel=debug --expand --onehot -cateogries --sources="clingen-overall-scores-pediatric,vrs"
 ```
 
+Generate both individual and a joined output file from multiple sources or VariationID 8602 and include generated text template for each row and source.
+```commandline
+python main.py --loglevel=info --template --sources="clinvar-submission-summary,clinvar-variant-summary,gencc-submissions,clingen-dosage,clingen-gene-disease,vrs" --join --variant=8602
+```
 ## Source Configuration
 The program looks for sources in the ./sources subdirectory. By convention, the "name" of a source is the name of its 
 subdirectory. Each source subdirectory has from 2 to 3 configuration files: `config.yml`, `dictionary.csv`, and 
