@@ -45,27 +45,26 @@ To use `clingen-ai-tools`, run the `main.py` script in the root project director
 
 Command line options include:
 
-| Option            | Description                                                                                                            |
-|-------------------|------------------------------------------------------------------------------------------------------------------------|
-| --loglevel        | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).                                                             |
-| --template        | Generate new output column, one per row, based on template value in config.yml.                                        |
-| --days            | Generate new days_... column for dates as days since 1/1/1970.                                                         |
-| --age             | Generate new age_... column for dates as days since today.                                                             |
-| --onehot          | Generate output for columns configured to support one-hot encoding.                                                    |
-| --categories      | Generate output for columns configured to support categorical encoding.                                                |
-| --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.                      | 
-| --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv.          |
-| --na-value        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.             |
-| --download        | Download source files when not present. Download source files when not present. Configured with config.yml.            |
-| --force           | Download source files even if already present.                                                                         |
-| --counts          | Generate value counts for the source files (helpful for determining mapping candidates).                               |
-| --generate-config | Generate configuration files (config.yml, dictionary.csv, mapping.csv). May take multiple steps if no files yet exist. |
-| --sources         | List of sources to process, default is all sources.                                                                    |
-| --columns         | Column names to output. May specify comma separated list. Default is all columns.                                      |
-| --output          | Name of the overall output file. Default is `output.csv`.                                                              |
-| --join            | Create a joined data file using left joins following the --sources list. --sources must be specified.                  |
-| --variant         | Filter output by clinvar variation-id(s). May specify comma separated list. Default include all records.               | 
-| --gene            | Filter output by gene symbol(s). May specify comma separated list. Default is all records.                             |
+| Option            | Description                                                                                                  |
+|-------------------|--------------------------------------------------------------------------------------------------------------|
+| --loglevel        | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).                                                   |
+| --template        | Generate new output column, one per row, based on template value in config.yml.                              |
+| --days            | Generate new days_... column for dates as days since 1/1/1970.                                               |
+| --age             | Generate new age_... column for dates as days since today.                                                   |
+| --onehot          | Generate output for columns configured to support one-hot encoding.                                          |
+| --categories      | Generate output for columns configured to support categorical encoding.                                      |
+| --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.            | 
+| --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv. |
+| --na-value        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.   |
+| --download        | Download source files when not present. Download source files when not present. Configured with config.yml.  |
+| --force           | Download source files even if already present.                                                               |
+| --counts          | Print value counts for the source files (helpful for determining mapping candidates).                        |
+| --sources         | List of sources to process, default is all sources.                                                          |
+| --columns         | Column names to output. May specify comma separated list. Default is all columns.                            |
+| --output          | Name of the overall output file. Default is `output.csv`.                                                    |
+| --join            | Create a joined data file using left joins following the --sources list. --sources must be specified.        |
+| --variant         | Filter output by clinvar variation-id(s). May specify comma separated list. Default include all records.     | 
+| --gene            | Filter output by gene symbol(s). May specify comma separated list. Default is all records.                   |
 
 ## Example Usage
 
@@ -246,13 +245,16 @@ A `mapping.csv` file contains the following columns:
 ## Adding a New Source
 
 To add a new source data file, first create a new subdirectory in the ./sources directory. Ideally no spaces in the 
-directory name. Then run the program using --generate-config.
+directory name. Then run the program using --sources="<subdirectory nanme>". First time it will create
+a template `config.yml`. Edit the `config.yml` and specify the url, file name, etc. Run again and it will
+download the file and generate a `dictionary.csv` template. Edit the dictionary to configure. If any fields
+will use mapping, then set the map flag in the dictionary and re-run. It will generate a template mapping.csv.
 
 ```commandline
 cd ./sources
-mkdir new-source-file-name
+mkdir new-source-file-name # <== use your desired source name here
 cd ..
-python main.py --generate-config
+python main.py --sources="new-source-file-name" # <== use your source name here
 ```
 This will create a `config.yml` in the ./new-source-file-name directory which will need to be edited.
 
@@ -276,25 +278,24 @@ This will create a `config.yml` in the ./new-source-file-name directory which wi
 Now set each of the values in the new `config.yml` to meet the requirements. Usually, you will need a `name`,
 `url`, `file`, and `delimiter` choice at a minimum.
 
-Once you've made the edits, run the program again with the --download option and the --sources option.
+Once you've made the edits, run the program again still specifying the --sources option.
 
 ```
-python main.py --download --sources="new-source-file-name"
+python main.py --sources="new-source-file-name"
 ```
 
-If the file has been successfully downloaded, you can now run the --generate-config again to create template files 
-for `dictionary.csv`.
+If the file has been successfully downloaded, it will generate a template for `dictionary.csv`.
 
 ```
-python main.py --generate-config --sources="new-source-file-name"
+python main.py --sources="new-source-file-name"
 ```
 
 Edit the new `dictionary.csv` and set the flags and configurations for each column. Most flags default to False.
-If you configure any columns for mapping, then if you run --generate-config again, it will generate a mapping file
-template for those columns with the known values in the file with the frequency data of each value (--counts).
+If you configure any columns for mapping, then if you run again it will generate a mapping file
+template for those columns with the known values in the data file with the frequency data of each value.
 
 ```
-python main.py --generate-config --counts --sources="new-source-file-name"
+python main.py --sources="new-source-file-name"
 ```
 
 Edit the `mapping.csv` file to create the specific output values and mapping sets you desire.

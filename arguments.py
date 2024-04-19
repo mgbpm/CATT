@@ -36,18 +36,12 @@ def parse():
                         help="Generate output column transforming date column to days since 1 Jan 1970.")
     parser.add_argument('--age', action='store_true',
                         help="Generate output column transforming date column to days since date value.")
-    # TODO: parser.add_argument('--continuous', action='store_true',
-    #                           help="Generate continuous variables for columns that support it.")
-    # TODO: parser.add_argument('--scaling', action='store_true',
-    #                           help="Min/max scaling for variables to 0 to 1 range.")
 
     # configuration management
     parser.add_argument('--force', action='store_true',
                         help="Download datafiles even if present and overwrite.")
     parser.add_argument('--counts', action='store_true',
-                        help="Generate unique value counts for columns configured for mapping and ranking.")
-    parser.add_argument('--generate-config', action='store_true', dest='generate_config',
-                        help="Generate templates for config.yml, dictionary.csv, and mapping.csv.")
+                        help="Print unique value counts for columns (helpful for deciding on mappings and categories).")
 
     # output control
     parser.add_argument('--sources',
