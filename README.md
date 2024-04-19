@@ -56,7 +56,6 @@ Command line options include:
 | --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.            | 
 | --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv. |
 | --na-value        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.   |
-| --download        | Download source files when not present. Download source files when not present. Configured with config.yml.  |
 | --force           | Download source files even if already present.                                                               |
 | --counts          | Print value counts for the source files (helpful for determining mapping candidates).                        |
 | --sources         | List of sources to process, default is all sources.                                                          |
