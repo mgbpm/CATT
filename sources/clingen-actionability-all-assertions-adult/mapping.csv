@@ -1,0 +1,23 @@
+column,value,frequency,map-name,map-value
+suggestedAssertion,Strong Actionability,1101.0,suggested-assert-rank,0.9
+suggestedAssertion,Moderate Actionability,704.0,suggested-assert-rank,0.5
+suggestedAssertion,Limited Actionability,442.0,suggested-assert-rank,0.1
+suggestedAssertion,Assertion Pending,130.0,suggested-assert-rank,0
+suggestedAssertion,N/A - Insufficient evidence: expert review,14.0,suggested-assert-rank,-0.01
+preliminaryAssertion,Moderate Actionability,9.0,prelim-assert-rank,0.5
+preliminaryAssertion,Strong Actionability,1.0,prelim-assert-rank,0.9
+preliminaryAssertion,Limited Actionability,1.0,prelim-assert-rank,0.1
+consensusAssertion,Assertion Pending,1075.0,consensus-assert-rank,0
+consensusAssertion,Strong Actionability,508.0,consensus-assert-rank,0.9
+consensusAssertion,Moderate Actionability,408.0,consensus-assert-rank,0.5
+consensusAssertion,Limited Actionability,263.0,consensus-assert-rank,0.1
+consensusAssertion,Definitive Actionability,80.0,consensus-assert-rank,1
+consensusAssertion,N/A - Insufficient evidence: expert review,51.0,consensus-assert-rank,-0.01
+consensusAssertion,No Assertion: scoring group absence,6.0,consensus-assert-rank,-0.01
+status-assertion,Complete,2396.0,status-assert-rank,1
+status-assertion,Incomplete,98.0,status-assert-rank,0
+status-overall,Released,2490.0,status-overall-rank,1
+status-overall,Retracted,4.0,status-overall-rank,-1
+status-stg1,Complete,2270.0,status-stg1-rank,1
+status-stg1,Incomplete,181.0,status-stg1-rank,0
+status-stg1,Failed,43.0,status-stg1-rank,-1

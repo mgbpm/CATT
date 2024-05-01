@@ -1,0 +1,16 @@
+--- # ClinGen Gene Disease
+- name: clingen-gene-disease
+  url: https://search.clinicalgenome.org/kb/gene-validity/download
+  file: gene-disease-summary.tsv
+  header_row: 0
+  skip_rows: 0,1,2,3,5
+  delimiter: comma
+  quoting: 0
+  strip_hash: 0
+  md5_url:
+  md5_file:
+  template: >
+    Clingen's gene-disease associations indicate pathogenic mutations in gene {GENE SYMBOL} may be
+    associated with condition {DISEASE LABEL} with {MOI} inheritance pattern and a classification of
+    {CLASSIFICATION} as of {CLASSIFICATION DATE}. This disease association is reviewed as part of 
+    the {GCEP} expert panel.

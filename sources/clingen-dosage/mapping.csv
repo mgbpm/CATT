@@ -1,0 +1,13 @@
+column,value,frequency,map-name,map-value
+HAPLOINSUFFICIENCY,Gene Associated with Autosomal Recessive Phenotype,736,haplo-insuff-rank,-0.01
+HAPLOINSUFFICIENCY,Sufficient Evidence for Haploinsufficiency,365,haplo-insuff-rank,0.99
+HAPLOINSUFFICIENCY,No Evidence for Haploinsufficiency,262,haplo-insuff-rank,0.5
+HAPLOINSUFFICIENCY,Little Evidence for Haploinsufficiency,117,haplo-insuff-rank,0.75
+HAPLOINSUFFICIENCY,Dosage Sensitivity Unlikely,35,haplo-insuff-rank,0.01
+HAPLOINSUFFICIENCY,Emerging Evidence for Haploinsufficiency,26,haplo-insuff-rank,0.9
+TRIPLOSENSITIVITY,No Evidence for Triplosensitivity,1248,triplo-insuff-rank,0.5
+TRIPLOSENSITIVITY,Little Evidence for Triplosensitivity,11,triplo-insuff-rank,0.75
+TRIPLOSENSITIVITY,Emerging Evidence for Triplosensitivity,3,triplo-insuff-rank,0.9
+TRIPLOSENSITIVITY,Dosage Sensitivity Unlikely,3,triplo-insuff-rank,0.01
+TRIPLOSENSITIVITY,Sufficient Evidence for Triplosensitivity,2,triplo-insuff-rank,0.99
+TRIPLOSENSITIVITY,Gene Associated with Autosomal Recessive Phenotype,1,triplo-insuff-rank,-0.01

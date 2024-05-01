@@ -1,0 +1,9 @@
+column,value,frequency,map-name,map-value
+consensusAssertion,Strong Actionability,69,consensus-assert-rank,0.9
+consensusAssertion,Moderate Actionability,62,consensus-assert-rank,0.75
+consensusAssertion,Assertion Pending,57,consensus-assert-rank,0.5
+consensusAssertion,N/A - Insufficient evidence: early rule-out,43,consensus-assert-rank,
+consensusAssertion,Limited Actionability,36,consensus-assert-rank,0.6
+consensusAssertion,Definitive Actionability,11,consensus-assert-rank,0.99
+consensusAssertion,No Assertion: scoring group absence,6,consensus-assert-rank,0.5
+consensusAssertion,N/A - Insufficient evidence: expert review,3,consensus-assert-rank,

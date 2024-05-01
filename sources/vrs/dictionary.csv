@@ -1,0 +1,3 @@
+"column","comment",join-group,onehot,category,continuous,format,map,days,age,expand,na-value
+clinvar_variation_id,"The ClinVar VariationID from variant_summary.txt.",variation-id,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"vrs_2_0_alpha_id","GA4GH Variation Representation Specification, see https://vrs.ga4gh.org. A unique variant identifier.",,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""

@@ -1,0 +1,7 @@
+"column","comment",join-group,onehot,category,continuous,format,map,days,age,expand,na-value
+GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"HGNC ID","HGNC id for the specified gene in the form `HGNC:<hgnc gene id>`",hgnc-id,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"HAPLOINSUFFICIENCY","Interpretation category for haploinsufficiency and inheritance mode if applicable, for example 'Gene Associated with Autosomal Recessive Phenotype' or 'Little Evidence for Haploinsufficiency'.",,FALSE,TRUE,FALSE,,TRUE,FALSE,FALSE,FALSE,""
+"TRIPLOSENSITIVITY","Interpretation category for triploinsufficiency and inheritance mode if applicable, for example 'Sufficient Evidence for Triplosensitivity', 'Dosage Sensitivity Unlikely' or 'Little Evidence for Triploinsufficiency'.",,FALSE,TRUE,FALSE,,TRUE,FALSE,FALSE,FALSE,""
+"ONLINE REPORT","A URL to the dosage sensitivity report at clinicalgenome.org.",,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
+"DATE","Date added or last updated.",,FALSE,FALSE,FALSE,"%Y-%m-%dT%H:%M:%SZ",FALSE,TRUE,TRUE,FALSE,""

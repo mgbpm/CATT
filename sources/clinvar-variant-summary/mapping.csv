@@ -1,0 +1,193 @@
+column,value,frequency,map-name,map-value
+ClinicalSignificance,Uncertain significance,2200764,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely benign,1213912,clin-sig-confidence-rank,0.1
+ClinicalSignificance,Benign,411799,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Pathogenic,297732,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Conflicting interpretations of pathogenicity,205883,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely pathogenic,139249,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Benign/Likely benign,75382,clin-sig-confidence-rank,0.05
+ClinicalSignificance,Pathogenic/Likely pathogenic,39323,clin-sig-confidence-rank,0.95
+ClinicalSignificance,not provided,22039,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,drug response,3800,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,other,3248,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,no interpretation for the single variant,1462,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,risk factor,930,clin-sig-confidence-rank,0.9
+ClinicalSignificance,association,726,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,conflicting data from submitters,312,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Affects,299,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Uncertain significance/Uncertain risk allele,250,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely risk allele,192,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Pathogenic; other,159,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Pathogenic; drug response,109,clin-sig-confidence-rank,0.99
+ClinicalSignificance,protective,93,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Uncertain risk allele,61,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic; risk factor,60,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Conflicting interpretations of pathogenicity; other,48,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely pathogenic/Likely risk allele,40,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Likely pathogenic; drug response,34,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; risk factor,32,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Benign; other,26,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Likely benign; other,24,clin-sig-confidence-rank,0.1
+ClinicalSignificance,Likely pathogenic; risk factor,22,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Uncertain significance; drug response,22,clin-sig-confidence-rank,0.5
+ClinicalSignificance,confers sensitivity,22,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Pathogenic; Affects,17,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Uncertain significance; risk factor,16,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic/Likely risk allele,16,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Pathogenic/Likely pathogenic; other,16,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Pathogenic; association,14,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association,14,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic; risk factor,12,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Benign/Likely benign; other,12,clin-sig-confidence-rank,0.05
+ClinicalSignificance,Benign; risk factor,12,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Uncertain significance; association,12,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely pathogenic; association,10,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Uncertain significance; other,10,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Benign; association,10,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Likely benign; drug response; other,10,clin-sig-confidence-rank,0.1
+ClinicalSignificance,"Likely pathogenic, low penetrance",9,clin-sig-confidence-rank,0.9
+ClinicalSignificance,protective; risk factor,8,clin-sig-confidence-rank,0.9
+ClinicalSignificance,association not found,7,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Benign/Likely benign; risk factor,6,clin-sig-confidence-rank,0.5
+ClinicalSignificance,"Pathogenic/Likely pathogenic/Pathogenic, low penetrance",6,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Likely pathogenic; other,6,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; other; risk factor,6,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic; drug response,6,clin-sig-confidence-rank,0.95
+ClinicalSignificance,drug response; risk factor,6,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Pathogenic; protective,6,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,"Pathogenic, low penetrance",5,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Benign; drug response,4,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association; risk factor,4,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Conflicting interpretations of pathogenicity; drug response,4,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic/Likely risk allele,4,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Benign/Likely benign; drug response,4,clin-sig-confidence-rank,0.05
+ClinicalSignificance,Conflicting interpretations of pathogenicity; Affects,4,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Benign/Likely benign; drug response; other,4,clin-sig-confidence-rank,0.05
+ClinicalSignificance,Benign; confers sensitivity,4,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Conflicting interpretations of pathogenicity; protective,4,clin-sig-confidence-rank,0.5
+ClinicalSignificance,confers sensitivity; other,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Benign; Affects,2,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Likely benign; association,2,clin-sig-confidence-rank,0.1
+ClinicalSignificance,Likely benign; risk factor,2,clin-sig-confidence-rank,0.1
+ClinicalSignificance,Conflicting interpretations of pathogenicity; drug response; other,2,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely pathogenic; Affects,2,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Pathogenic; confers sensitivity,2,clin-sig-confidence-rank,0.99
+ClinicalSignificance,drug response; other,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,association; risk factor,2,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Affects; association; other,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,"Likely pathogenic/Pathogenic, low penetrance",2,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Benign/Likely benign; association,2,clin-sig-confidence-rank,0.05
+ClinicalSignificance,Pathogenic; drug response; other,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,association; drug response; risk factor,2,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Uncertain risk allele; risk factor,2,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Affects; risk factor,2,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Uncertain significance; Pathogenic/Likely pathogenic,2,clin-sig-confidence-rank,-1
+ClinicalSignificance,Benign/Likely benign; other; risk factor,2,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Uncertain risk allele; protective,2,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Affects; association,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Pathogenic; association; protective,2,clin-sig-confidence-rank,0.99
+ClinicalSignificance,association; drug response,2,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association; other,2,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Pathogenic/Likely risk allele; risk factor,2,clin-sig-confidence-rank,0.95
+ClinicalSignificance,other; risk factor,2,clin-sig-confidence-rank,0.9
+ClinicalSignificance,"Pathogenic/Likely pathogenic/Pathogenic, low penetrance; other",2,clin-sig-confidence-rank,0.95
+ClinicalSignificance,Uncertain significance,2200764,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign,1213912,clin-impact-rank,0.9
+ClinicalSignificance,Benign,411799,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic,297732,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity,205883,clin-impact-rank,0.9
+ClinicalSignificance,Likely pathogenic,139249,clin-impact-rank,0.9
+ClinicalSignificance,Benign/Likely benign,75382,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic/Likely pathogenic,39323,clin-impact-rank,0.9
+ClinicalSignificance,not provided,22039,clin-impact-rank,-0.01
+ClinicalSignificance,drug response,3800,clin-impact-rank,-0.01
+ClinicalSignificance,other,3248,clin-impact-rank,-0.01
+ClinicalSignificance,no interpretation for the single variant,1462,clin-impact-rank,-0.01
+ClinicalSignificance,risk factor,930,clin-impact-rank,0.1
+ClinicalSignificance,association,726,clin-impact-rank,-0.01
+ClinicalSignificance,conflicting data from submitters,312,clin-impact-rank,0.5
+ClinicalSignificance,Affects,299,clin-impact-rank,-0.01
+ClinicalSignificance,Uncertain significance/Uncertain risk allele,250,clin-impact-rank,0.5
+ClinicalSignificance,Likely risk allele,192,clin-impact-rank,0.1
+ClinicalSignificance,Pathogenic; other,159,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic; drug response,109,clin-impact-rank,0.9
+ClinicalSignificance,protective,93,clin-impact-rank,-0.01
+ClinicalSignificance,Uncertain risk allele,61,clin-impact-rank,0.1
+ClinicalSignificance,Pathogenic; risk factor,60,clin-impact-rank,0.5
+ClinicalSignificance,Conflicting interpretations of pathogenicity; other,48,clin-impact-rank,0.9
+ClinicalSignificance,Likely pathogenic/Likely risk allele,40,clin-impact-rank,0.5
+ClinicalSignificance,Likely pathogenic; drug response,34,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; risk factor,32,clin-impact-rank,0.5
+ClinicalSignificance,Benign; other,26,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign; other,24,clin-impact-rank,0.9
+ClinicalSignificance,Likely pathogenic; risk factor,22,clin-impact-rank,0.5
+ClinicalSignificance,Uncertain significance; drug response,22,clin-impact-rank,0.9
+ClinicalSignificance,confers sensitivity,22,clin-impact-rank,-0.01
+ClinicalSignificance,Pathogenic; Affects,17,clin-impact-rank,0.9
+ClinicalSignificance,Uncertain significance; risk factor,16,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely risk allele,16,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic; other,16,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic; association,14,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association,14,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic; risk factor,12,clin-impact-rank,0.5
+ClinicalSignificance,Benign/Likely benign; other,12,clin-impact-rank,0.9
+ClinicalSignificance,Benign; risk factor,12,clin-impact-rank,0.5
+ClinicalSignificance,Uncertain significance; association,12,clin-impact-rank,0.9
+ClinicalSignificance,Likely pathogenic; association,10,clin-impact-rank,0.9
+ClinicalSignificance,Uncertain significance; other,10,clin-impact-rank,0.9
+ClinicalSignificance,Benign; association,10,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign; drug response; other,10,clin-impact-rank,0.9
+ClinicalSignificance,"Likely pathogenic, low penetrance",9,clin-impact-rank,0.5
+ClinicalSignificance,protective; risk factor,8,clin-impact-rank,0.1
+ClinicalSignificance,association not found,7,clin-impact-rank,-0.01
+ClinicalSignificance,Benign/Likely benign; risk factor,6,clin-impact-rank,0.5
+ClinicalSignificance,"Pathogenic/Likely pathogenic/Pathogenic, low penetrance",6,clin-impact-rank,0.5
+ClinicalSignificance,Likely pathogenic; other,6,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; other; risk factor,6,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic; drug response,6,clin-impact-rank,0.9
+ClinicalSignificance,drug response; risk factor,6,clin-impact-rank,0.1
+ClinicalSignificance,Pathogenic; protective,6,clin-impact-rank,-0.01
+ClinicalSignificance,"Pathogenic, low penetrance",5,clin-impact-rank,0.5
+ClinicalSignificance,Benign; drug response,4,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association; risk factor,4,clin-impact-rank,0.5
+ClinicalSignificance,Conflicting interpretations of pathogenicity; drug response,4,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely pathogenic/Likely risk allele,4,clin-impact-rank,0.5
+ClinicalSignificance,Benign/Likely benign; drug response,4,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; Affects,4,clin-impact-rank,0.5
+ClinicalSignificance,Benign/Likely benign; drug response; other,4,clin-impact-rank,0.9
+ClinicalSignificance,Benign; confers sensitivity,4,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; protective,4,clin-impact-rank,0.5
+ClinicalSignificance,confers sensitivity; other,2,clin-impact-rank,-0.01
+ClinicalSignificance,Benign; Affects,2,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign; association,2,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign; risk factor,2,clin-impact-rank,0.9
+ClinicalSignificance,Conflicting interpretations of pathogenicity; drug response; other,2,clin-impact-rank,0.5
+ClinicalSignificance,Likely pathogenic; Affects,2,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic; confers sensitivity,2,clin-impact-rank,0.9
+ClinicalSignificance,drug response; other,2,clin-impact-rank,-0.01
+ClinicalSignificance,association; risk factor,2,clin-impact-rank,0.1
+ClinicalSignificance,Affects; association; other,2,clin-impact-rank,-0.01
+ClinicalSignificance,"Likely pathogenic/Pathogenic, low penetrance",2,clin-impact-rank,0.5
+ClinicalSignificance,Benign/Likely benign; association,2,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic; drug response; other,2,clin-impact-rank,-0.01
+ClinicalSignificance,association; drug response; risk factor,2,clin-impact-rank,0.1
+ClinicalSignificance,Uncertain risk allele; risk factor,2,clin-impact-rank,0.1
+ClinicalSignificance,Affects; risk factor,2,clin-impact-rank,0.1
+ClinicalSignificance,Uncertain significance; Pathogenic/Likely pathogenic,2,clin-impact-rank,0.9
+ClinicalSignificance,Benign/Likely benign; other; risk factor,2,clin-impact-rank,0.5
+ClinicalSignificance,Uncertain risk allele; protective,2,clin-impact-rank,0.1
+ClinicalSignificance,Affects; association,2,clin-impact-rank,-0.01
+ClinicalSignificance,Pathogenic; association; protective,2,clin-impact-rank,0.9
+ClinicalSignificance,association; drug response,2,clin-impact-rank,-0.01
+ClinicalSignificance,Conflicting interpretations of pathogenicity; association; other,2,clin-impact-rank,0.5
+ClinicalSignificance,Pathogenic/Likely risk allele; risk factor,2,clin-impact-rank,0.5
+ClinicalSignificance,other; risk factor,2,clin-impact-rank,0.1
+ClinicalSignificance,"Pathogenic/Likely pathogenic/Pathogenic, low penetrance; other",2,clin-impact-rank,0.5
+ReviewStatus,"criteria provided, single submitter",3537074,ReviewStatus_rank,1
+ReviewStatus,"criteria provided, multiple submitters, no conflicts",655710,ReviewStatus_rank,2
+ReviewStatus,"criteria provided, conflicting interpretations",205440,ReviewStatus_rank,1
+ReviewStatus,no assertion criteria provided,166213,ReviewStatus_rank,-0.01
+ReviewStatus,reviewed by expert panel,30342,ReviewStatus_rank,3
+ReviewStatus,no assertion provided,22037,ReviewStatus_rank,0
+ReviewStatus,no interpretation for the single variant,1462,ReviewStatus_rank,-0.01
+ReviewStatus,practice guideline,116,ReviewStatus_rank,4

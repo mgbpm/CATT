@@ -1,0 +1,90 @@
+column,value,frequency,map-name,map-value
+ClinicalSignificance,Uncertain significance,1654907,clin-impact-rank,0.9
+ClinicalSignificance,Likely benign,968395,clin-impact-rank,0.9
+ClinicalSignificance,Benign,467848,clin-impact-rank,0.9
+ClinicalSignificance,Pathogenic,331868,clin-impact-rank,0.9
+ClinicalSignificance,Likely pathogenic,146636,clin-impact-rank,0.9
+ClinicalSignificance,not provided,30650,clin-impact-rank,-0.01
+ClinicalSignificance,drug response,4935,clin-impact-rank,-0.01
+ClinicalSignificance,other,2341,clin-impact-rank,-0.01
+ClinicalSignificance,risk factor,1241,clin-impact-rank,0.1
+ClinicalSignificance,association,520,clin-impact-rank,-0.01
+ClinicalSignificance,Likely risk allele,332,clin-impact-rank,0.1
+ClinicalSignificance,Affects,321,clin-impact-rank,-0.01
+ClinicalSignificance,Uncertain risk allele,241,clin-impact-rank,0.1
+ClinicalSignificance,Benign/Likely benign,195,clin-impact-rank,0.9
+ClinicalSignificance,conflicting data from submitters,192,clin-impact-rank,0.5
+ClinicalSignificance,protective,111,clin-impact-rank,-0.01
+ClinicalSignificance,"Pathogenic, low penetrance",25,clin-impact-rank,0.5
+ClinicalSignificance,Established risk allele,21,clin-impact-rank,0.1
+ClinicalSignificance,confers sensitivity,20,clin-impact-rank,-0.01
+ClinicalSignificance,Pathogenic/Likely pathogenic,8,clin-impact-rank,0.9
+ClinicalSignificance,"Likely pathogenic, low penetrance",8,clin-impact-rank,0.5
+ClinicalSignificance,association not found,6,clin-impact-rank,-0.01
+ClinicalSignificance,Uncertain significance,1654907,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Likely benign,968395,clin-sig-confidence-rank,0.1
+ClinicalSignificance,Benign,467848,clin-sig-confidence-rank,0.01
+ClinicalSignificance,Pathogenic,331868,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Likely pathogenic,146636,clin-sig-confidence-rank,0.9
+ClinicalSignificance,not provided,30650,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,drug response,4935,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,other,2341,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,risk factor,1241,clin-sig-confidence-rank,0.9
+ClinicalSignificance,association,520,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Likely risk allele,332,clin-sig-confidence-rank,0.9
+ClinicalSignificance,Affects,321,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Uncertain risk allele,241,clin-sig-confidence-rank,0.5
+ClinicalSignificance,Benign/Likely benign,195,clin-sig-confidence-rank,0.05
+ClinicalSignificance,conflicting data from submitters,192,clin-sig-confidence-rank,0.5
+ClinicalSignificance,protective,111,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,"Pathogenic, low penetrance",25,clin-sig-confidence-rank,0.99
+ClinicalSignificance,Established risk allele,21,clin-sig-confidence-rank,0.99
+ClinicalSignificance,confers sensitivity,20,clin-sig-confidence-rank,-0.01
+ClinicalSignificance,Pathogenic/Likely pathogenic,8,clin-sig-confidence-rank,0.95
+ClinicalSignificance,"Likely pathogenic, low penetrance",8,clin-sig-confidence-rank,0.9
+ClinicalSignificance,association not found,6,clin-sig-confidence-rank,-0.01
+ReviewStatus,"criteria provided, single submitter",3285623,review-status-rank,1
+ReviewStatus,no assertion criteria provided,275454,review-status-rank,0
+ReviewStatus,no assertion provided,30557,review-status-rank,-0.01
+ReviewStatus,reviewed by expert panel,15899,review-status-rank,3
+ReviewStatus,practice guideline,2503,review-status-rank,4
+ReviewStatus,flagged submission,785,review-status-rank,-0.01
+CollectionMethod,clinical testing,3425267,collect-method-group,1
+CollectionMethod,literature only,69566,collect-method-group,3
+CollectionMethod,research,49558,collect-method-group,2
+CollectionMethod,curation,48135,collect-method-group,1
+CollectionMethod,in vitro,4313,collect-method-group,4
+CollectionMethod,phenotyping only,3693,collect-method-group,5
+CollectionMethod,reference population,3673,collect-method-group,2
+CollectionMethod,case-control,2873,collect-method-group,2
+CollectionMethod,provider interpretation,1417,collect-method-group,1
+CollectionMethod,clinical testing;curation,620,collect-method-group,1
+CollectionMethod,not provided,358,collect-method-group,0
+CollectionMethod,in vitro;research,291,collect-method-group,2
+CollectionMethod,in vivo;research,238,collect-method-group,2
+CollectionMethod,clinical testing;in vitro,196,collect-method-group,1
+CollectionMethod,clinical testing;provider interpretation,152,collect-method-group,1
+CollectionMethod,curation;literature only,147,collect-method-group,1
+CollectionMethod,in vivo,77,collect-method-group,4
+CollectionMethod,clinical testing;in vivo,72,collect-method-group,1
+CollectionMethod,clinical testing;research,58,collect-method-group,1
+CollectionMethod,in vitro;literature only,26,collect-method-group,3
+CollectionMethod,literature only;research,16,collect-method-group,2
+CollectionMethod,provider interpretation;research,16,collect-method-group,1
+CollectionMethod,case-control;clinical testing,12,collect-method-group,1
+CollectionMethod,case-control;in vitro,11,collect-method-group,2
+CollectionMethod,in vitro;in vivo;research,8,collect-method-group,2
+CollectionMethod,clinical testing;in vitro;in vivo,6,collect-method-group,1
+CollectionMethod,case-control;research,3,collect-method-group,2
+CollectionMethod,case-control;in vivo,3,collect-method-group,2
+CollectionMethod,phenotyping only;research,3,collect-method-group,2
+CollectionMethod,in vitro;in vivo,3,collect-method-group,4
+CollectionMethod,reference population;research,2,collect-method-group,2
+CollectionMethod,case-control;reference population,1,collect-method-group,2
+CollectionMethod,in vitro;phenotyping only,1,collect-method-group,4
+CollectionMethod,clinical testing;in vitro;in vivo;research,1,collect-method-group,1
+CollectionMethod,case-control;in vitro;in vivo;research,1,collect-method-group,2
+CollectionMethod,clinical testing;literature only,1,collect-method-group,1
+CollectionMethod,clinical testing;phenotyping only,1,collect-method-group,1
+CollectionMethod,clinical testing;in vitro;research,1,collect-method-group,1
+CollectionMethod,in vitro;reference population,1,collect-method-group,2

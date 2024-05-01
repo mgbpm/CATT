@@ -1,0 +1,63 @@
+column,value,frequency,map-name,map-value
+CLASSIFICATION,Definitive,1484,classification-rank,0.99
+CLASSIFICATION,Limited,337,classification-rank,0.6
+CLASSIFICATION,Moderate,280,classification-rank,0.75
+CLASSIFICATION,Disputed,146,classification-rank,0.1
+CLASSIFICATION,Strong,52,classification-rank,0.9
+CLASSIFICATION,No Known Disease Relationship,40,classification-rank,0.5
+CLASSIFICATION,Refuted,26,classification-rank,0.01
+GCEP,Intellectual Disability and Autism,271,gcep-rank,8
+GCEP,Mitochondrial Diseases,190,gcep-rank,6
+GCEP,Hearing Loss,175,gcep-rank,2
+GCEP,Aminoacidopathy,116,gcep-rank,6
+GCEP,Hereditary Cancer,115,gcep-rank,4
+GCEP,Epilepsy,110,gcep-rank,8
+GCEP,Hemostasis Thrombosis,105,gcep-rank,3
+GCEP,Syndromic Disorders,73,gcep-rank,11
+GCEP,Retina,65,gcep-rank,10
+GCEP,Antibody Deficiencies GCEP,64,gcep-rank,5
+GCEP,Charcot-Marie-Tooth,62,gcep-rank,9
+GCEP,SCID-CID,60,gcep-rank,5
+GCEP,General Gene Curation,51,gcep-rank,11
+GCEP,RASopathy,49,gcep-rank,13
+GCEP,Kidney Cystic and Ciliopathy Disorders,49,gcep-rank,7
+GCEP,Dilated Cardiomyopathy,48,gcep-rank,1
+GCEP,Breast/Ovarian Cancer,45,gcep-rank,4
+GCEP,Skeletal Disorders,45,gcep-rank,15
+GCEP,Congenital Myopathies,45,gcep-rank,9
+GCEP,Motile Ciliopathy,44,gcep-rank,12
+GCEP,Lysosomal Diseases GCEP,41,gcep-rank,6
+GCEP,Amyotrophic Lateral Sclerosis Spectrum Disorders,40,gcep-rank,9
+GCEP,Brain Malformations,39,gcep-rank,8
+GCEP,Peroxisomal Disorders,36,gcep-rank,6
+GCEP,General Inborn Errors of Metabolism,31,gcep-rank,6
+GCEP,Hereditary Cardiovascular Disease,30,gcep-rank,1
+GCEP,Fatty Acid Oxidation Disorders,28,gcep-rank,6
+GCEP,Arrhythmogenic Right Ventricular Cardiomyopathy,25,gcep-rank,1
+GCEP,Pulmonary Hypertension,25,gcep-rank,1
+GCEP,Limb Girdle Muscular Dystrophy,24,gcep-rank,9
+GCEP,Heritable Thoracic Aortic Aneurysm and Dissection,23,gcep-rank,1
+GCEP,Craniofacial Malformations,23,gcep-rank,15
+GCEP,Brugada Syndrome,20,gcep-rank,1
+GCEP,Colon Cancer,20,gcep-rank,4
+GCEP,Cerebral Palsy,18,gcep-rank,8
+GCEP,Monogenic Diabetes,17,gcep-rank,6
+GCEP,Long QT Syndrome,17,gcep-rank,1
+GCEP,Hypertrophic Cardiomyopathy,17,gcep-rank,1
+GCEP,Glaucoma and Neuro-Ophthalmology,14,gcep-rank,10
+GCEP,Tubulopathy,12,gcep-rank,7
+GCEP,Congenital Heart Disease,12,gcep-rank,1
+GCEP,Catecholaminergic Polymorphic Ventricular Tachycardia,12,gcep-rank,1
+GCEP,Prenatal,9,gcep-rank,11
+GCEP,Short QT Syndrome,9,gcep-rank,1
+GCEP,Parkinson's Disease,7,gcep-rank,9
+GCEP,Glomerulopathy,6,gcep-rank,7
+GCEP,Rett and Angelman-like Disorders,6,gcep-rank,8
+GCEP,Congenital Disorders of Glycosylation,5,gcep-rank,6
+GCEP,Complement-Mediated Kidney Diseases,4,gcep-rank,7
+GCEP,UNC Biocuration Core,4,gcep-rank,11
+GCEP,Primary Immune Regulatory Disorders,3,gcep-rank,5
+GCEP,Muscular Dystrophies and Myopathies,2,gcep-rank,9
+GCEP,Congenital Anomalies of the Kidney and Urinary Tract,2,gcep-rank,7
+GCEP,PTEN,1,gcep-rank,4
+GCEP,Interstitial Lung Disease,1,gcep-rank,12
