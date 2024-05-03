@@ -10,6 +10,13 @@
   md5_url:
   md5_file:
   template: >
-    Clingen's overall adult gene-disease associations indicate pathogenic mutations in gene(s) {geneOrVariant} may be
-    associated with condition {disease} with overall status {status-overall} and score {status-scoring}. Potential
-    disease outcomes include {outcome}, with potential interventions {intervention}.
+    {% choose %}
+    {% when dict['status-stg1'] == 'Failed' %}ClinGen's current review of the actionability of the 
+    ${dict.geneOrVariant} gene(s) associated with ${dict.disease} is incomplete and no scores have been provided. 
+    This was last updated on ${dict.lastUpdated}.{% end %}
+    {% otherwise %}ClinGen's review of the actionability of the ${dict.geneOrVariant} gene(s) associated with 
+    ${dict.disease} has resulted in an overall actionability score of ${dict.overall} for the clinical outcome of 
+    ${dict.outcome} with the potential intervention ${dict.intervention}. The individual scores for this assertion 
+    include a score of ${dict.severity} for severity, ${dict.likelihood} for likelihood, ${dict.natureOfIntervention} 
+    for nature of intervention, and ${dict.effectiveness} for effectiveness. This assertion was released on 
+    ${dict.releaseDate}.{% end %}{% end %}

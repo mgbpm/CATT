@@ -136,11 +136,12 @@ else:
     sources = list(set(source_files_df['name']) & set(args.sources))
 
 # any invalid sources?
-invalid_sources = set(args.sources).difference(sources)
-if len(invalid_sources) > 0:
-    print("Invalid source file specified in --sources parameter: ", invalid_sources)
-    helper.critical("Invalid source file specified in --sources parameter: ", invalid_sources)
-    exit(-1)
+if args.sources:
+    invalid_sources = set(args.sources).difference(sources)
+    if len(invalid_sources) > 0:
+        print("Invalid source file specified in --sources parameter: ", invalid_sources)
+        helper.critical("Invalid source file specified in --sources parameter: ", invalid_sources)
+        exit(-1)
 
 helper.debug("Using source files: ", sources)
 
@@ -477,7 +478,15 @@ for index, sourcefile in source_files_df.iterrows():
         template_column_name = "{}-template".format(sourcefile_name)
         helper.debug("Applying template to", sourcefile_name, "as", template_column_name)
         df = data[sourcefile_name]
-        df[template_column_name] = df.apply(lambda x: helper.apply_template(sourcefile['template'], x), axis=1)
+        if len(df) > 0:
+            template_text = sourcefile['template']
+            genshi_template = helper.get_genshi_template(template_text)
+            df[template_column_name] = df.apply(lambda record: helper.apply_genshi_template(genshi_template, record),
+                                                axis=1)
+        else:
+            df[template_column_name] = df.apply(lambda x: '', axis=1)
+        helper.debug("df after template:")
+        helper.debug(df)
         data[sourcefile_name] = df
 
     helper.debug("Data:", data[sourcefile['name']])

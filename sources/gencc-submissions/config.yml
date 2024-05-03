@@ -10,5 +10,8 @@
   md5_url:
   md5_file:
   template: >
-    The GenCC submission from {submitter_title} for gene {gene_symbol} regarding association with disease {disease_title} with {moi_title} inheritance pattern has classfication {classification_title}.
-    The submission was made on {submitted_as_date} and references these PubMed articles: {submitted_as_pmids}.
+    ${dict.submitter_title} has assessed the ${dict.gene_symbol} gene and found an association with ${dict.disease_title} 
+    with an inheritance pattern of ${dict.moi_title}. The submitter's classification of this association is 
+    ${dict.classification_title} as of ${dict.submitted_as_date}. If available, a public report of this gene-disease 
+    assertion can be found at: ${dict.submitted_as_public_report_url}. PMIDs for any publications that are associated 
+    with this curation are listed here: ${dict.submitted_as_pmids}.

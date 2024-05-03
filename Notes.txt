@@ -1,0 +1,63 @@
+Main
+	Arguments
+	Setup Logging
+	Pandas Options
+	Constants
+	Get list of possible sources from directory (Sources.Scan)
+	Filter source list from command line arguments
+	Generate Missing Config YML's
+		Exit if had to generate a config
+		Or prompt to update settings and lead through source creation process?
+	Load Sources (Sources.Load)
+
+Helper
+	Logging
+	Dates
+	Unzip
+	MD5
+	Miscellaneous
+Arguments
+	Command Line Args (arguments.parse)
+Sources
+	Constructor
+	Scan (return list of source names)
+	Load
+	List
+	Show
+	Count
+	Dataframe
+Source
+	Constructor
+		Load Config (generate if missing)
+		Load Dicitonary (generate if missing)
+		Load Mapping (generate if missing)
+		Create DF
+		Load Data ?
+	Download
+	Dataframe
+	Load Data
+	Encode
+	Output (individual file)
+Download
+	All
+	File (including MD5, Unzip)
+Config
+	Load
+	Generate
+Dictionary
+	Load
+	Empty Dataframe
+	Generate
+Mapping
+	Load
+	Empty Dataframe
+	Generate
+Encoding
+	Expand
+	NA-value
+	Onehot
+	Mapping
+	Categories
+	Days
+	Age
+	Template
