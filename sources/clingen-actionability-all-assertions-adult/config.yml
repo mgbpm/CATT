@@ -10,5 +10,6 @@
   md5_url:
   md5_file:
   template: >
-    Clingen's consensus {context} actionability gene-disease assertions indicate pathogenic mutations in gene(s) {geneOrVariant} may be
-    associated with condition {disease} with {consensusAssertion} and status {status-overall} and assertion status {status-assertion}.
+    Clingen's consensus ${dict.context} actionability gene-disease assertions indicate pathogenic mutations in gene(s) 
+    ${dict.geneOrVariant} may be associated with condition ${dict.disease} with ${dict.consensusAssertion} and status 
+    ${dict['status-overall']} and assertion status ${dict['status-assertion']}.

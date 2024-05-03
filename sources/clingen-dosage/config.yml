@@ -10,5 +10,11 @@
   md5_url:
   md5_file:
   template: >
-    ClinGen indicates a Dosage Sensitivity assertion for gene {GENE SYMBOL} as of {DATE}, with haploinsufficiency of
-    {HAPLOINSUFFICIENCY}, and triploinsufficiency of {TRIPLOSENSITIVITY}.
+    ClinGen's assessment of the dosage sensitivity of the ${dict['GENE SYMBOL']} gene indicates a haploinsufficiency assertion of 
+    {% choose %}
+    {% when len(str(dict.HAPLOINSUFFICIENCY)) == 0 %}"not provided"{% end %}
+    {% otherwise %}"${dict.HAPLOINSUFFICIENCY}"{% end %}
+    {% end %} and a triplosensitivity assertion of {% choose %}
+    {% when len(str(dict.TRIPLOSENSITIVITY)) == 0 %}"not provided"{% end %}
+    {% otherwise %}"${dict.TRIPLOSENSITIVITY}"{% end %}
+    {% end %}. These assertions were made on ${dict.DATE}.
