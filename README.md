@@ -80,7 +80,7 @@ python main.py --loglevel=info --map --categories --expand --onehot --gene="MYH7
 Generate individual output files for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
 and producing onehot and categorical encodings.
 ```
-python main.py --loglevel=debug --expand --onehot -cateogries --sources="clingen-overall-scores-pediatric,vrs"
+python main.py --loglevel=debug --expand --onehot --categories --sources="clingen-overall-scores-pediatric,vrs"
 ```
 
 Generate both individual and a joined output file from multiple sources or VariationID 8602 and include generated text template for each row and source.
