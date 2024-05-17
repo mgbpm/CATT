@@ -14,6 +14,9 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 # TODO:
+# ** don't eliminate columns from --columns until after --template processing so maybe at the very end
+
+# TODO:
 # ** finish dictionary definitions for all sources
 
 # TODO:
@@ -211,12 +214,14 @@ for index, sourcefile in source_files_df.iterrows():
 
     # verify if mapping file exists or not, generate mapping file if necessary based on full dataset
 
+    # TODO: args.columns refactoring
     # if columns selected on command line, filter to only include those
     if args.columns is not None:
         dic = dic.loc[dic['column'].isin(args.columns)]
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
+        # TODO: args.columns refactoring
         if args.columns is None or r['column'] in args.columns:
             dictionary.loc[len(dictionary)] = [sourcefile.get('name'),
                                                sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
@@ -231,6 +236,7 @@ for index, sourcefile in source_files_df.iterrows():
 
     sourcefile_file = str(os.path.join(sourcefile.get('path'), sourcefile.get('file')))
 
+    # TODO: args.columns refactoring
     if args.columns is None:
         df_tmp = pd.read_csv(sourcefile_file,
                              header=sourcefile.get('header_row'), sep=separator,
@@ -339,6 +345,7 @@ for index, sourcefile in source_files_df.iterrows():
             mapping_file = str(os.path.join(sourcefile['path'], 'mapping.csv'))
             if not (isfile(mapping_file) and access(mapping_file, R_OK)):
                 # no mapping file found, let's create one, but ask user to re-run if columns are filtered
+                # TODO: args.columns refactoring
                 if args.columns is None:
                     generate.mapping(mapping_file, data, sourcefile, dic)
                     helper.error("Cannot map columns without mapping file for", sourcename,
@@ -489,6 +496,11 @@ for index, sourcefile in source_files_df.iterrows():
         helper.debug(df)
         data[sourcefile_name] = df
 
+    # TODO: args.sources refactoring
+    # Now that we're done with generated columns, let's cleanup
+    # To save memory, strip out all columns that don't either match the args.columns, including derivative
+    # columns like *-template, *-category, etc., or any join-group columns
+
     helper.debug("Data:", data[sourcefile['name']])
 
 # show the dictionary
@@ -511,6 +523,8 @@ for d in data.keys():
     output_file = d + '-' + args.output
     helper.debug("Generating intermediate source output", output_file)
     out_df = data[d]
+    # TODO: args.columns refactoring
+    # TODO: create a copy of dataframe so we don't touch original at this point
     helper.debug("out_df:", out_df)
     out_df.to_csv(output_file, index=False)
 
@@ -578,6 +592,8 @@ if args.join:
         if args.na_value is not None:
             out_df.fillna(args.na_value, inplace=True)
 
+        # TODO: args.columns refactoring
+        # drop any columns that were not included in args.columns (or keep them all)
         output_file = args.output
         helper.info("Generating output", output_file)
         helper.debug("out_df:", out_df)
