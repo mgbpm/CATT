@@ -58,11 +58,17 @@ def parse():
                         help='Filter to a specific variant (CV VariationID). Variable must be tagged in join-group.')
     parser.add_argument('--gene',  action='store', type=str,
                         help='Filter to a specific gene (symbol). Variable must be tagged in join-group.')
+    parser.add_argument('--template-out', action='store', dest='text_output', type=str, default=None,
+                        help="Generate text output file using template values to specified file.")
 
     args = parser.parse_args()
 
     if args.join and not args.sources:
         print("ERROR: must specify --sources with --join. The sources list is the list of data files to join.")
+        exit(-1)
+
+    if args.text_output is not None and not args.template:
+        print("ERROR: must specify --template with --template-out.")
         exit(-1)
 
     return args

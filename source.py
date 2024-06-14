@@ -23,12 +23,12 @@ def source_list():
 
 
 def df():
-    dataframe = pd.DataFrame(columns=['name', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
+    dataframe = pd.DataFrame(columns=['name', 'suffix', 'path', 'url', 'download_file', 'file', 'gzip', 'header_row',
                                       'skip_rows', 'delimiter', 'quoting', 'strip_hash', 'md5_url', 'md5_file',
                                       'template', 'dictionary', 'mapping'])
     for s in sources:
         dataframe.loc[len(dataframe)] = [
-            s.name, s.path, s.url, s.download_file,
+            s.name, s.suffix, s.path, s.url, s.download_file,
             s.file, s.gzip, s.header_row,
             s.skip_rows, s.delimiter, s.quoting,
             s.strip_hash, s.md5_url, s.md5_file,
@@ -62,6 +62,7 @@ class Source:
                 helper.debug(config)
                 # add to config dataframe
                 self.name = config.get('name')
+                self.suffix = config.get('suffix')
                 self.path = path
                 self.url = config.get('url')
                 self.download_file = config.get('download_file')

@@ -1,5 +1,6 @@
 --- # ClinGen Overall Scores Adult
 - name: clingen-overall-scores-adult
+  suffix: cgoveradult
   url: https://actionability.clinicalgenome.org/ac/Adult/api/summ?format=tsv
   file: clingen-overall-scores-adult.tsv
   header_row: 0

@@ -1,5 +1,6 @@
 --- # ClinVar Variant Summary
 - name: clinvar-variant-summary
+  suffix: cvvar
   url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz
   download_file: variant_summary.txt.gz
   file: variant_summary.txt

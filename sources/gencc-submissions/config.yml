@@ -1,5 +1,6 @@
 --- # GenCC Submissions
 - name: gencc-submissions
+  suffix: gccsub
   url: https://search.thegencc.org/download/action/submissions-export-tsv
   file: gencc-submissions.tsv
   header_row: 0
