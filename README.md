@@ -1,10 +1,10 @@
 # clingen-ai-tools
-Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and Large Language Model
+Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
 analysis. The tool is command line-based but familiarity with Python is helpful.
 
 * Provides pre-configured numerical mapping of significant categorical data elements.
-* Allows simplified joining across large data sets on common values into a common CSV.
-* Generates per source record text summary for use by LLMs
+* Allows simplified joining across large data sets on common values into a consolidated CSV.
+* Generates per source record text summary for use by LLMs, and combines across sources into single output.
 
 ## Acknowledgements
 
@@ -17,23 +17,24 @@ This software was funded by NHGRI and ClinGen.
 * Filtering output to include specified columns.
 * Output encoding for one-hot, categorical, and mapping values to ranks or new values
 * Date handling
-* Included mappings for subset of columns
+* Included numerical and other mappings for subset of columns
 * Expands value-list columns to multiple rows (e.g. gene value of "MYH7,BRCA1" becomes two rows)
 * Extendable to new data sources through configuration
 * Generates new configuration files for new sources, including value counts
+* Generates LLM suitable text file based on templated per source per row input
 
 ## Prerequisites / Getting Started
 
-Python 3 is required (tested with Python 3.9.18), as well as the following modules, which you may configure in a virtual
-environment.
+Python 3 is required (tested with Python 3.9.18), as well as the following modules, which you may optionally 
+configure in a virtual environment.
 
-```
+```sh
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 or
-```
+```sh
  python -m pip install pandas argparse sklearn.preprocessing pyyaml requests dateparser genshi
 ```
 
@@ -69,28 +70,35 @@ Command line options include:
 ## Example Usage
 
 Force downloads of all sources, even if files already exist locally.
-```
+```sh
 python main.py --force --loglevel=info
 ```
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
-``` 
+```sh
 python main.py --loglevel=info --map --categories --expand --onehot --gene="MYH7" --join --sources="vrs,clinvar-variant-summary,gencc-submissions,clingen-overall-scores-adult"
 ```
 
 Generate individual output files for vrs and clingen-overall-scores-pediatric, while expanding references to multiple genes,
 and producing onehot and categorical encodings.
-```
+```sh
 python main.py --loglevel=debug --expand --onehot --categories --sources="clingen-overall-scores-pediatric,vrs"
 ```
 
 Generate both individual and a joined output file from multiple sources or VariationID 8602 and include generated text template for each row and source.
-```commandline
+```sh
 python main.py --loglevel=info --template --sources="clinvar-submission-summary,clinvar-variant-summary,gencc-submissions,clingen-dosage,clingen-gene-disease,vrs" --join --variant=8602
 ```
+
+Generate text-only file from generated template fields in filtered records. Suitable for use with LLMs.
+```sh
+export VAR=5760 GENE=KISS1R
+python main.py --loglevel=info --expand --sources="clinvar-submission-summary,clinvar-variant-summary,vrs,gencc-submissions,clingen-gene-disease,clingen-consensus-assertions-adult,clingen-consensus-assertions-pediatric,clingen-dosage,clingen-overall-scores-adult,clingen-overall-scores-pediatric" --template --template-out="variant_5760_gene_KISS1R.txt" --variant=5760 --gene=KISS1R
+```
+
 ## Source Configuration
-The program looks for sources in the ./sources subdirectory. By convention, the "name" of a source is the name of its 
-subdirectory. Each source subdirectory has from 2 to 3 configuration files: `config.yml`, `dictionary.csv`, and 
+The program looks for data sources in the ./sources subdirectory. By convention, the "name" of a source is the name of
+its subdirectory. Each source subdirectory has from 2 to 3 configuration files: `config.yml`, `dictionary.csv`, and 
 optionally `mapping.csv`. These contain metadata for the file, fields, and field values of the source, and control
 how the source is downloaded and transformed by the program.
 
@@ -112,7 +120,7 @@ each row in the file. The template uses Genshi's NewTextTemplate module (see
 https://genshi.readthedocs.io/en/latest/text-templates/). Each column value is available to the template as
 dict.column_name, or if the column name has spaces use dict['column name'].
 
-```
+```yaml
 --- # ClinVar Submission Summary
 - name: clinvar-submission-summary
   url: https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz
@@ -141,6 +149,7 @@ dict.column_name, or if the column name has spaces use dict['column name'].
     {% choose %}{% when len(str(dict.Description)) > 0 %}“${dict.Description}”{% end %}
     {% otherwise %}"no details provided"{% end %}{% end %}
 ```
+
 | Setting       | Description                                                                                                                                |
 |---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
 | name          | Unique name for the source that should match the subdirectory name.                                                                        |
@@ -168,7 +177,7 @@ containing either of those join-groups. The "HAPLOINSUFFICIENCY" and "TRIPLOSENS
 categorical encoding (string values to numbers) and to mapping encoding which will utilize the mapping.csv to generate
 additional columns for the output based on each value.
 
-```
+```csv
 "column","comment",join-group,onehot,category,continuous,format,map,days,age,expand,na-value
 GENE SYMBOL,"Official gene symbol of the assertion.",gene-symbol,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
 "HGNC ID","HGNC id for the specified gene in the form `HGNC:<hgnc gene id>`",hgnc-id,FALSE,FALSE,FALSE,,FALSE,FALSE,FALSE,FALSE,""
@@ -209,18 +218,18 @@ pattern, the program will attempt to determine using a fallback approach.
 | 2020-06-18 13:31:17             | %Y-%m-%d %H:%M:%S        |
 
 ### mapping.csv
-Each source may optionally have `mapping.csv` file. If the `map` column is set to true in the dictionary for a specific
-field, then the mapping file will be used to map values in the specified column to new values as specified in the map
-file. Multiple mapping sets can exist for a field and each will generate a new output column in which values for the
-original field are mapped to new values via a simple lookup strategy. The new output column will be named according
-to the `map-name` column in the map.
+Each source may optionally have a `mapping.csv` file. If the `map` column is set to true in the dictionary for a 
+specific field, then the mapping file will be used to map values in the specified column to new values as specified in
+the map file. Multiple mapping sets can exist for a field and each will generate a new output column in which values 
+for the original field are mapped to new values via a simple lookup strategy. The new output column will be named 
+according to the `map-name` column in the map.
 
 The `mapping.csv` file for the `clingen-dosage` source is as follows. The `column` matches the dictionary and header
 column name, the `value` contains the specific values that the column may contain, the `map-name` is the name of the
 new output column to create for the mapping, and `map-value` is the new value to set in the new output column based
 on the original column value.
 
-```
+```csv
 column,value,frequency,map-name,map-value
 HAPLOINSUFFICIENCY,Gene Associated with Autosomal Recessive Phenotype,736,haplo-insuff-rank,-0.01
 HAPLOINSUFFICIENCY,Sufficient Evidence for Haploinsufficiency,365,haplo-insuff-rank,0.99
@@ -254,7 +263,7 @@ a template `config.yml`. Edit the `config.yml` and specify the url, file name, e
 download the file and generate a `dictionary.csv` template. Edit the dictionary to configure. If any fields
 will use mapping, then set the map flag in the dictionary and re-run. It will generate a template mapping.csv.
 
-```commandline
+```sh
 cd ./sources
 mkdir new-source-file-name # <== use your desired source name here
 cd ..
@@ -262,9 +271,10 @@ python main.py --sources="new-source-file-name" # <== use your source name here
 ```
 This will create a `config.yml` in the ./new-source-file-name directory which will need to be edited.
 
-```
+```yaml
 --- # Source file description
 - name: source-name # usually directory name
+  suffix: abc # a suffix appended to column names when joining and duplicates are encountered
   url: # put download url here (e.g. https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/variant_summary.txt.gz)
   download_file: # put name of download file here if different from final file name (e.g. for gz first) (optional)
   file: data.tsv # put name of download file here (if gzip then put the final unzipped name here)
@@ -284,13 +294,13 @@ Now set each of the values in the new `config.yml` to meet the requirements. Usu
 
 Once you've made the edits, run the program again still specifying the --sources option.
 
-```
+```sh
 python main.py --sources="new-source-file-name"
 ```
 
 If the file has been successfully downloaded, it will generate a template for `dictionary.csv`.
 
-```
+```sh
 python main.py --sources="new-source-file-name"
 ```
 
@@ -298,7 +308,7 @@ Edit the new `dictionary.csv` and set the flags and configurations for each colu
 If you configure any columns for mapping, then if you run again it will generate a mapping file
 template for those columns with the known values in the data file with the frequency data of each value.
 
-```
+```sh
 python main.py --sources="new-source-file-name"
 ```
 
