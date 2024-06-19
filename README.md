@@ -46,25 +46,25 @@ To use `clingen-ai-tools`, run the `main.py` script in the root project director
 
 Command line options include:
 
-| Option            | Description                                                                                                   |
-|-------------------|---------------------------------------------------------------------------------------------------------------|
-| --loglevel        | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).                                                    |
-| --template        | Generate new output column, one per row, based on template value in config.yml.                               |
-| --template-output | Generate a composite text file from all template values as specified file. Requires --template.               |
-| --days            | Generate new days_... column for dates as days since 1/1/1970.                                                |
-| --age             | Generate new age_... column for dates as days since today.                                                    |
-| --onehot          | Generate output for columns configured to support one-hot encoding.                                           |
-| --categories      | Generate output for columns configured to support categorical encoding.                                       |
-| --expand          | For columns configured to expand, generate a row for each value if more than one value for a row.             | 
-| --map             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv. |
-| --na-value        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.    |
-| --force           | Download source files even if already present.                                                                |
-| --counts          | Print value counts for the source files (helpful for determining mapping candidates).                         |
-| --sources         | List of sources to process, default is all sources.                                                           |
-| --columns         | Column names to output. May specify comma separated list. Default is all columns.                             |
-| --joined-output   | Generate a joined output file using left joins following the --sources list. --sources must be specified.     |
-| --variant         | Filter output by clinvar variation-id(s). May specify comma separated list. Default include all records.      | 
-| --gene            | Filter output by gene symbol(s). May specify comma separated list. Default is all records.                    |
+| Option                         | Description                                                                                                   |
+|--------------------------------|---------------------------------------------------------------------------------------------------------------|
+| <nobr>--loglevel</nobr>        | Set logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL).                                                    |
+| <nobr>--template</nobr>        | Generate new output column, one per row, based on template value in config.yml.                               |
+| <nobr>--template-output</nobr> | Generate a composite text file from all template values as specified file. Requires --template.               |
+| <nobr>--days</nobr>            | Generate new days_... column for dates as days since 1/1/1970.                                                |
+| <nobr>--age</nobr>             | Generate new age_... column for dates as days since today.                                                    |
+| <nobr>--onehot</nobr>          | Generate output for columns configured to support one-hot encoding.                                           |
+| <nobr>--categories</nobr>      | Generate output for columns configured to support categorical encoding.                                       |
+| <nobr>--expand</nobr>          | For columns configured to expand, generate a row for each value if more than one value for a row.             | 
+| <nobr>--map</nobr>             | For values configured to map, generate new columns with values mapped based on the configuration mapping.csv. |
+| <nobr>--na-value</nobr>        | Set global replacement for NaN / missing values and trigger replacement including field level replacement.    |
+| <nobr>--force</nobr>           | Download source files even if already present.                                                                |
+| <nobr>--counts</nobr>          | Print value counts for the source files (helpful for determining mapping candidates).                         |
+| <nobr>--sources</nobr>         | List of sources to process, default is all sources.                                                           |
+| <nobr>--columns</nobr>         | Column names to output. May specify comma separated list. Default is all columns.                             |
+| <nobr>--joined-output</nobr>   | Generate a joined output file using left joins following the --sources list. --sources must be specified.     |
+| <nobr>--variant</nobr>         | Filter output by clinvar variation-id(s). May specify comma separated list. Default include all records.      | 
+| <nobr>--gene</nobr>            | Filter output by gene symbol(s). May specify comma separated list. Default is all records.                    |
 
 ## Example Usage
 
