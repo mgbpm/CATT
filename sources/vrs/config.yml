@@ -1,5 +1,6 @@
 --- # VRS to VariantID mapping
 - name: vrs
+  suffix: vrs
   url:
   file: vrs.csv
   header_row: 0

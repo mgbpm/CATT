@@ -1,9 +1,13 @@
 # local modules
+from textwrap import TextWrapper
+
 import arguments
 import helper
 import download
 import source
 import generate
+import numpy as np
+import copy
 
 # other libraries
 import os
@@ -20,10 +24,6 @@ from sklearn.preprocessing import LabelEncoder
 # ** verify mapping gives errors when value not found and recommend updating mapping file
 
 # TODO:
-# ** Filter out non-selected columns from the dictionaries
-# ** Consider _not_ filtering join columns and then getting rid of them later?
-
-# TODO:
 # Potential strategy for both memory management and full feature set
 # 1. Import in chunks using all columns
 #  a. Filter out any rows as specified on command line (variant, gene)
@@ -36,17 +36,6 @@ from sklearn.preprocessing import LabelEncoder
 # import pandas as pd
 # iter_csv = pd.read_csv('file.csv', iterator=True, chunksize=1000)
 # df = pd.concat([chunk[chunk['field'] > constant] for chunk in iter_csv])
-
-# TODO:
-# ** Examine behavior when using --map, --onehot, --categories, etc when columns are filtered with --columns
-# ** Consider a --low-memory option in which columns are filtered at read, but by default filtered after processing
-
-# TODO:
-# ** divide major areas into functions and perhaps files for code clarity and maintainability
-#     * then verify command line makes sense (joins, variant filter, gene filter, etc.)
-#     * then read the data files one by one
-# ** do I need to use globals? try to eliminate
-# ** dig more into why "is True" not working as expected in one spot
 
 # TODO:
 #  ** look for missing or deprecated columns in data files as compared to dictionaries and mapping files
@@ -72,7 +61,6 @@ args = arguments.parse()
 # LOGGING & PANDAS SETUP
 #
 #########################
-
 
 helper.log_setup(args.loglevel)
 
@@ -194,7 +182,7 @@ for index, sourcefile in source_files_df.iterrows():
     sourcename = sourcefile.get('name')
     helper.debug(sourcefile.get('path'), sourcefile.get('file'),
                  sourcefile.get('dictionary'), "sep='" + sourcefile.get('delimiter') + "'")
-
+    sourcesuffix = "-" + sourcefile.get('suffix')
     separator = helper.get_separator(sourcefile.get('delimiter'))
 
     # read source dictionary
@@ -211,18 +199,21 @@ for index, sourcefile in source_files_df.iterrows():
 
     # verify if mapping file exists or not, generate mapping file if necessary based on full dataset
 
-    # if columns selected on command line, filter to only include those
+    # TODO: args.columns refactoring
+    #  - add an attribute to indicate if the dictionary item is included in final output
+    #    so we can ignore those columns for mapping, categories, onehot, days, age
+    # if columns selected on command line, set inclusion flag filter to only include those
+    dic['output'] = dic.apply(lambda x: True, axis=1)
     if args.columns is not None:
-        dic = dic.loc[dic['column'].isin(args.columns)]
+        dic['output'] = np.where(dic.column.isin(args.columns), True, False)
 
     # add dictionary entries to global dic if specified on command line, or all if no columns specified on command line
     for i, r in dic.iterrows():
-        if args.columns is None or r['column'] in args.columns:
-            dictionary.loc[len(dictionary)] = [sourcefile.get('name'),
-                                               sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
-                                               r.get('comment'), r.get('join-group'), r.get('onehot'),
-                                               r.get('category'), r.get('continuous'), r.get('format'), r.get('map'),
-                                               r.get('days'), r.get('age'), r.get('expand'), r.get('na-value')]
+        dictionary.loc[len(dictionary)] = [sourcefile.get('name'),
+                                           sourcefile.get('path'), sourcefile.get('file'), r.get('column'),
+                                           r.get('comment'), r.get('join-group'), r.get('onehot'),
+                                           r.get('category'), r.get('continuous'), r.get('format'), r.get('map'),
+                                           r.get('days'), r.get('age'), r.get('expand'), r.get('na-value')]
 
     helper.debug("Dictionary processed")
 
@@ -231,26 +222,16 @@ for index, sourcefile in source_files_df.iterrows():
 
     sourcefile_file = str(os.path.join(sourcefile.get('path'), sourcefile.get('file')))
 
-    if args.columns is None:
-        df_tmp = pd.read_csv(sourcefile_file,
-                             header=sourcefile.get('header_row'), sep=separator,
-                             skiprows=helper.skip_array(sourcefile.get('skip_rows')), engine='python',
-                             quoting=sourcefile.get('quoting'),
-                             # nrows=100,
-                             on_bad_lines='warn')
-        helper.debug("File header contains columns:", df_tmp.columns)
-        data.update({sourcefile['name']: df_tmp})
-        sourcecolumns = list(set(dic['column']))
-    else:
-        sourcecolumns = list(set(dic['column']) & set(args.columns))
-        data.update({sourcefile['name']: pd.read_csv(sourcefile_file,
-                                                     usecols=lambda x: x.strip(' #') in sourcecolumns,
-                                                     header=sourcefile.get('header_row'), sep=separator,
-                                                     skiprows=helper.skip_array(sourcefile.get('skip_rows')),
-                                                     engine='python',
-                                                     quoting=sourcefile.get('quoting'),
-                                                     # nrows=100,
-                                                     on_bad_lines='warn')})
+    df_tmp = pd.read_csv(sourcefile_file,
+                         header=sourcefile.get('header_row'), sep=separator,
+                         skiprows=helper.skip_array(sourcefile.get('skip_rows')), engine='python',
+                         quoting=sourcefile.get('quoting'),
+                         # nrows=100,
+                         on_bad_lines='warn')
+    helper.debug("File header contains columns:", df_tmp.columns)
+    data.update({sourcefile['name']: df_tmp})
+    sourcecolumns = list(set(dic['column']))
+
     if sourcefile['strip_hash'] == 1:
         helper.debug("Strip hashes and spaces from column labels")
         df = data[sourcefile.get('name')]
@@ -339,19 +320,12 @@ for index, sourcefile in source_files_df.iterrows():
             mapping_file = str(os.path.join(sourcefile['path'], 'mapping.csv'))
             if not (isfile(mapping_file) and access(mapping_file, R_OK)):
                 # no mapping file found, let's create one, but ask user to re-run if columns are filtered
-                if args.columns is None:
-                    generate.mapping(mapping_file, data, sourcefile, dic)
-                    helper.error("Cannot map columns without mapping file for", sourcename,
-                                 "; Please edit generated template.")
-                    print("ERROR: Cannot map columns without mapping file for", sourcename,
-                          "; Please edit generated template.")
-                    exit(-1)
-                else:
-                    helper.error("Mapping columns specified but no mapping file configured for", sourcename,
-                                 "; Please run again without --columns to generate a complete mapping file.")
-                    print("ERROR: Mapping columns specified but no mapping file configured for", sourcename,
-                          ";  Please run again without --columns to generate a complete mapping file.")
-                    exit(-1)
+                generate.mapping(mapping_file, data, sourcefile, dic)
+                helper.error("Cannot map columns without mapping file for", sourcename,
+                             "; Please edit generated template.")
+                print("ERROR: Cannot map columns without mapping file for", sourcename,
+                      "; Please edit generated template.")
+                exit(-1)
             else:
                 helper.debug("Found existing mapping file", mapping_file)
 
@@ -498,6 +472,24 @@ helper.debug("Dictionary:", dictionary)
 
 #########################
 #
+# TEMPLATE TEXT OUTPUT
+#
+#########################
+
+if args.text_output is not None:
+    wrapper = TextWrapper(width=80, break_long_words=False, break_on_hyphens=False)
+    with open(args.text_output, "w") as file:
+        file.write("")
+        for d in data.keys():
+            out_df = data[d]
+            template_column_name = "{}-template".format(d)
+            for index, row in out_df.iterrows():
+                file.write(wrapper.fill(row[template_column_name]))
+                file.write("\n\n")
+
+
+#########################
+#
 # PER-SOURCE OUTPUT
 #
 #########################
@@ -508,11 +500,18 @@ for d in data.keys():
     helper.debug(data[d].columns.values.tolist())
 
     # files put in current directory, prepend source name to file
-    output_file = d + '-' + args.output
+    output_file = d + '-output.csv'
+    if args.output is not None:
+        output_file = d + '-' + args.output
     helper.debug("Generating intermediate source output", output_file)
-    out_df = data[d]
-    helper.debug("out_df:", out_df)
-    out_df.to_csv(output_file, index=False)
+    if args.columns is not None:
+        single_source_df = copy.deepcopy(data[d])
+        columns_to_remove = list(set(single_source_df.columns.values.tolist()) - set(args.columns))
+        single_source_df.drop(columns_to_remove, axis=1, inplace=True)
+    else:
+        single_source_df = data[d]
+    helper.debug("single_source_df:", single_source_df)
+    single_source_df.to_csv(output_file, index=False)
 
 
 #########################
@@ -542,13 +541,10 @@ if args.join:
             if c == 0:
                 out_df = data[s]
             else:
-                # pick a join group that has already in a merged dataset, starting with the highest precedence
+                # pick a join group that is already in a merged dataset, starting with the highest precedence
                 join_groups = s_dic_df['join-group'].unique()
-                helper.debug("joins for", s, "include", join_groups)
-                helper.debug("prior join groups:", already_joined_dic_df)
                 selected_join_group = None
                 for jg in join_groups:
-                    helper.debug("checking if previous merges have", jg)
                     if len(already_joined_dic_df.loc[(already_joined_dic_df['join-group'] == jg)]) == 0:
                         continue
                     selected_join_group = jg
@@ -566,7 +562,11 @@ if args.join:
                 right_join_column = right_join_df['column']
                 helper.debug("Right join column", right_join_column)
                 helper.debug("Out length prior", len(out_df))
-                out_df = pd.merge(out_df, data[s], how='left', left_on=left_join_column, right_on=right_join_column)
+                out_df = pd.merge(
+                    out_df, data[s],
+                    how='left',
+                    left_on=left_join_column,
+                    right_on=right_join_column, suffixes=('', sourcesuffix))
                 helper.debug("Out length after", len(out_df))
             c = c + 1
             helper.debug("Adding to prior join df", s_dic_df)
@@ -577,6 +577,12 @@ if args.join:
         # fill in any Nan values after merging dataframes
         if args.na_value is not None:
             out_df.fillna(args.na_value, inplace=True)
+
+        # drop any columns that were not included in args.columns (or keep them all)
+        if args.columns is not None:
+            columns_to_remove = list(set(out_df.columns.values.tolist()) - set(args.columns))
+            helper.debug("Columns to remove:", columns_to_remove)
+            out_df.drop(columns_to_remove, axis=1, inplace=True)
 
         output_file = args.output
         helper.info("Generating output", output_file)

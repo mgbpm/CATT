@@ -1,5 +1,6 @@
 --- # ClinGen Gene Dosage Sensitivity
 - name: clingen-dosage
+  suffix: cgdose
   url: https://search.clinicalgenome.org/kb/gene-dosage/download
   file: gene-dosage-sensitivity.tsv
   header_row: 0

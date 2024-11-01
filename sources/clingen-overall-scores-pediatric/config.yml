@@ -1,5 +1,6 @@
 --- # ClinGen Overall Scores Pediatric
 - name: clingen-overall-scores-pediatric
+  suffix: cgoverpedi
   url: https://actionability.clinicalgenome.org/ac/Pediatric/api/summ?format=tsv
   file: clingen-overall-scores-pediatric.tsv
   header_row: 0

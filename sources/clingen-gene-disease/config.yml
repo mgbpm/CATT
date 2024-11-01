@@ -1,5 +1,6 @@
 --- # ClinGen Gene Disease
 - name: clingen-gene-disease
+  suffix: cggenedis
   url: https://search.clinicalgenome.org/kb/gene-validity/download
   file: gene-disease-summary.tsv
   header_row: 0

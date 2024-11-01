@@ -1,5 +1,6 @@
 --- # ClinGen Consensus Assertions Adults
 - name: clingen-consensus-assertions-adult
+  suffix: cgassadult
   url: https://actionability.clinicalgenome.org/ac/Adult/api/summ/assertion?format=tsv
   file: clingen-consensus-assertions-adult.tsv
   header_row: 0

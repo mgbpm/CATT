@@ -50,19 +50,31 @@ def parse():
     parser.add_argument('--columns',
                         help="Comma-delimited list of columns to include based on 'column' in *.dict files.",
                         type=lambda s: [str(item) for item in s.split(',')])  # validate against configured dictionaries
-    parser.add_argument('--output',  action='store', type=str, default='output.csv',
+    parser.add_argument('--joined-output',  action='store', dest='output', type=str, default=None,
                         help='The desired output file name.')
-    parser.add_argument('--join',  action='store_true',
-                        help='Generate merged output file for sources specified in --sources.')
     parser.add_argument('--variant',  action='store', type=str,
                         help='Filter to a specific variant (CV VariationID). Variable must be tagged in join-group.')
     parser.add_argument('--gene',  action='store', type=str,
                         help='Filter to a specific gene (symbol). Variable must be tagged in join-group.')
+    parser.add_argument('--template-output', action='store', dest='text_output', type=str, default=None,
+                        help="Generate text output file using template values to specified file.")
 
     args = parser.parse_args()
 
+    # if --join-output then set flag for joining
+    if args.output is not None:
+        args.join = True
+    else:
+        args.join = False
+
+    # if --template-output is set, then assume we want --template also
+    if args.text_output is not None and not args.template:
+        args.template = True
+
+    # if joining, then need a list of sources in desired join order
     if args.join and not args.sources:
-        print("ERROR: must specify --sources with --join. The sources list is the list of data files to join.")
+        print("ERROR: must specify --sources with --joined-output. The sources list is the list of data files to join.")
         exit(-1)
+
 
     return args

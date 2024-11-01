@@ -1,5 +1,6 @@
 --- # ClinGen Consensus Assertions Pediatric
 - name: clingen-consensus-assertions-pediatric
+  suffix: cgasspedi
   url: https://actionability.clinicalgenome.org/ac/Pediatric/api/summ/assertion?format=tsv
   file: clingen-consensus-assertions-pediatric.tsv
   header_row: 0
