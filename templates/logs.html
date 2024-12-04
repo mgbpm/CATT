@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execution Logs</title>
+    <meta http-equiv="refresh" content="5"> <!-- Auto-refresh every 5 seconds -->
+</head>
+<body>
+    <h1>Execution Logs</h1>
+    <pre>
+        {% for log in logs %}
+        {{ log }}
+        {% endfor %}
+    </pre>
+    {% if logs %}
+        <p>Processing...</p>
+    {% else %}
+        <p>Processing complete! Redirecting to results page...</p>
+    {% endif %}
+    <script>
+        setTimeout(function() {
+            window.location.href = "/results";
+        }, 10000); <!-- Redirect to results page after 10 seconds -->
+    </script>
+</body>
+</html>
+
