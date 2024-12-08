@@ -55,7 +55,7 @@ def run_bash_script(filepath):
     global execution_logs, is_processing
     try:
         process = subprocess.Popen(
-            f"bash batch_summary.sh {filepath} {RESULTS_FOLDER}",
+            f"bash batch_results.sh {filepath} {RESULTS_FOLDER}",
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
