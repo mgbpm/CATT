@@ -1,4 +1,4 @@
-# clingen-ai-tools
+# CATT (ClinGen AI data Transformation Tool)
 Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
 analysis. The tool is command line-based but familiarity with Python is helpful.
 
