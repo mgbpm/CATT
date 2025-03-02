@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genetic Variant Summarization</title>
+</head>
+<body>
+    <h1>Upload File for Genetic Variant Summarization</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <label for="file">Select a file:</label>
+        <input type="file" name="file" id="file" required>
+        <br><br>
+        <button type="submit">Upload and Summarize</button>
+    </form>
+    <p>{{ get_flashed_messages() }}</p>
+</body>
+</html>
+
