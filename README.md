@@ -94,11 +94,12 @@ Generate text-only file from generated template fields in filtered records. Suit
 python main.py --loglevel=info --expand --sources="clinvar-submission-summary,clinvar-variant-summary,vrs,gencc-submissions,clingen-gene-disease,clingen-consensus-assertions-adult,clingen-consensus-assertions-pediatric,clingen-dosage,clingen-overall-scores-adult,clingen-overall-scores-pediatric" --template --template-output="variant_5760_gene_KISS1R.txt" --variant=5760 --gene=KISS1R
 ```
 
-Generate text-only file from generated template fields in filtered records. Suitable for use with LLMs. (Batch Processing Version)
+Generate text-only and csv-only files from generated template fields in filtered records. Suitable for use with LLMs. (Batch Processing Version)
 ```sh
-bash batch_results.sh {your input file} {your output folder}
+bash batch_txt_results.sh {your input file} {your output folder}
+bash batch_csv_results.sh {your input file} {your output folder}
 ```
-Note that every row in the {your input file} represents a variant ID, an example file is the `example_input_file_for_llm_summary.txt`, and the default output folder is `results/`. An example execution is `bash batch_results example_input_file_for_llm_summary.txt results/`
+Note that every row in the {your input file} represents a variant ID, an example file is the `example_input_file_for_llm_summary.txt`, and the default output folder is `results/`. An example execution is `bash batch_txt_results example_input_file_for_llm_summary.txt results/`
 
 
 ## Source Configuration
