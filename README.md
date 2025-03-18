@@ -72,6 +72,9 @@ Force downloads of all sources, even if files already exist locally.
 ```sh
 python main.py --force --loglevel=info
 ```
+
+Pull vrs.csv file from (Zenodo)[https://zenodo.org/records/15046078] and save it to `./sources/vrs/`
+
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
 ```sh
