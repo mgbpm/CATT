@@ -126,7 +126,7 @@ tab-delimited (`tab`).
 
 The `template` value is used with the --template command line option to generate a textual description of 
 each row in the file. The template uses Genshi's NewTextTemplate module (see 
-https://genshi.readthedocs.io/en/latest/text-templates/). Each column value is available to the template as
+https://shorturl.at/VavlZ). Each column value is available to the template as
 dict.column_name, or if the column name has spaces use dict['column name'].
 
 ```yaml
