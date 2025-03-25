@@ -1,5 +1,4 @@
-<img src="https://github.com/mgbpm/CATT/blob/dev/icon_white_bg.jpg" width="128"/>
-# CATT (ClinGen AI data Transformation Tool)
+<img src="https://github.com/mgbpm/CATT/blob/dev/icon_white_bg.jpg" width="64"/> # CATT (ClinGen AI data Transformation Tool)
 Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
 analysis. The tool is command line-based but familiarity with Python is helpful.
 
