@@ -1,4 +1,4 @@
-<img src="https://github.com/mgbpm/CATT/blob/dev/icon_github.jpg" width="256" class="center"/> 
+<img src="https://github.com/mgbpm/CATT/blob/dev/icon_github.jpg" width="1024" align="center"/> 
 
 # CATT (ClinGen AI data Transformation Tool)
 Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
