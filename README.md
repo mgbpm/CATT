@@ -1,4 +1,6 @@
-# CATT (ClinGen AI data Transformation Tool)
+<img src="https://github.com/mgbpm/CATT/blob/dev/icon_github.jpg" width="1024" align="center"/> 
+
+---
 Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
 analysis. The tool is command line-based but familiarity with Python is helpful.
 
@@ -72,6 +74,9 @@ Force downloads of all sources, even if files already exist locally.
 ```sh
 python main.py --force --loglevel=info
 ```
+
+Pull vrs.csv file from [Zenodo](https://zenodo.org/records/15046078) and save it to `./sources/vrs/`
+
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.
 ```sh
@@ -123,7 +128,7 @@ tab-delimited (`tab`).
 
 The `template` value is used with the --template command line option to generate a textual description of 
 each row in the file. The template uses Genshi's NewTextTemplate module (see 
-https://genshi.readthedocs.io/en/latest/text-templates/). Each column value is available to the template as
+https://shorturl.at/VavlZ). Each column value is available to the template as
 dict.column_name, or if the column name has spaces use dict['column name'].
 
 ```yaml
