@@ -1,4 +1,4 @@
-<img src="https://github.com/mgbpm/CATT/blob/dev/icon_github.jpg" width="1024" align="center"/> 
+<img src="https://github.com/mgbpm/CATT/blob/master/icon_github.jpg" width="1024" align="center"/> 
 
 ---
 Tool for preparing ClinGen, ClinVar and GenCC public datasets for use in machine learning and large language model
@@ -74,8 +74,6 @@ Force downloads of all sources, even if files already exist locally.
 ```sh
 python main.py --force --loglevel=info
 ```
-
-Pull vrs.csv file from [Zenodo](https://zenodo.org/records/15046078) and save it to `./sources/vrs/`
 
 Generate mappings, categorical and onehot encodings, filter by gene MYH7 and left join the sources vrs, 
 clinvar-variant-summary, gencc-submissions, and clingen-overall-scores-adult.

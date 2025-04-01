@@ -1,7 +1,7 @@
 --- # VRS to VariantID mapping
 - name: vrs
   suffix: vrs
-  url:
+  url: https://zenodo.org/records/15046078/files/vrs.csv?download=1
   file: vrs.csv
   header_row: 0
   skip_rows: None
