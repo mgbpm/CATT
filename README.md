@@ -44,7 +44,7 @@ Please use Pandas 2.0.0 or greater.
 
 ## Usage
 
-To use `clingen-ai-tools`, run the `main.py` script in the root project directory. 
+To use CATT, run the `main.py` script in the root project directory. 
 
 Command line options include:
 
