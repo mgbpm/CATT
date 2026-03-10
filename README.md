@@ -70,7 +70,7 @@ Command line options include:
 
 ## Example Usage
 
-Force downloads of all sources, even if files already exist locally.
+Force downloads of all sources, even if files already exist locally. Re-run the following command-line allows user to get updated releases of sources.
 ```sh
 python main.py --force --loglevel=info
 ```
