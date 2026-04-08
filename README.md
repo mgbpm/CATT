@@ -12,6 +12,11 @@ analysis. The tool is command line-based but familiarity with Python is helpful.
 
 This software was funded by NHGRI and ClinGen.
 
+## Journal Publication
+
+Please cite the following journal publication if you use CATT for scientific projects:
+* Du X, Nagy A, Oates MF, Wang Y, Wang X, Plasek JM, Aronson SJ, Lebo MS, Zhou L. Precision Grounding: Augmenting Large Language Models with Evidence-Based Databases for Trustworthy Genetic Variant Summarization. International Journal of Medical Informatics. 2026;214:106424. doi:10.1016/j.ijmedinf.2026.106424
+
 ## Features
 * Pre-configured for multiple data source files from ClinGen, ClinVar and GenCC.
 * Automatic download of source files when files are available on public servers.
